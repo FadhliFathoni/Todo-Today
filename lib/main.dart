@@ -6,9 +6,13 @@ import 'package:todo_today/views/History.dart';
 import 'package:todo_today/views/Home.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 Color PRIMARY_COLOR = Color.fromARGB(255, 255, 142, 61);
 Color BG_COLOR = Color.fromARGB(255, 239, 240, 243);
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

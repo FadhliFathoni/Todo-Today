@@ -49,13 +49,13 @@ class HistoryState extends State<History> {
       margin: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 5,
+        elevation: 2,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.white,
           ),
-          height: 150,
+          height: 100,
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.center, children: [
             Container(
