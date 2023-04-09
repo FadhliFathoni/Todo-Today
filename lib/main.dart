@@ -150,28 +150,12 @@ class _MainPageState extends State<MainPage> {
                     ),
                     actions: [
                       Container(
-                          height: 28,
-                          width: 81,
-                          child: ElevatedButton(
-                            onPressed: () {},
-                            child: Text(
-                              "Delete",
-                              style: TextStyle(color: Colors.red),
-                            ),
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-                          )),
-                      Container(
+                          margin: EdgeInsets.only(right: 14),
                           height: 28,
                           width: 81,
                           child: ElevatedButton(
                             onPressed: () {
-                              user.add({
-                                "title": title.text,
-                                "description": description.text,
-                                "date": DateTime.now().toString(),
-                                "time": "${time.hour}:${time.minute}",
-                                "status":"Not done yet"
-                              });
+                              user.add({"title": title.text, "description": description.text, "date": DateTime.now().toString(), "time": "${time.hour}:${time.minute}", "status": "Not done yet"});
                               Navigator.pop(context);
                             },
                             child: Text("Create"),

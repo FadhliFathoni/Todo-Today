@@ -31,7 +31,11 @@ class _HomeState extends State<Home> {
                   children: snapshot.data!.docs.map((e) {
                     var data = e.data() as Map<String, dynamic>;
                     var title = data['title'];
-                    return todoCard(user, data['title'], data['description'], data['time'], e.id);
+                    if (data['status'] != "Done") {
+                      return todoCard(user, data['title'], data['description'], data['time'], e.id);
+                    } else {
+                      return Container();
+                    }
                   }).toList(),
                 );
               } else if (snapshot.hasError) {
@@ -39,7 +43,7 @@ class _HomeState extends State<Home> {
                   child: Text("There is an error"),
                 );
               } else {
-                return CircularProgressIndicator();
+                return Center(child: CircularProgressIndicator());
               }
             },
           )),
@@ -183,6 +187,7 @@ class _HomeState extends State<Home> {
                                           style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
                                         )),
                                     Container(
+                                        margin: EdgeInsets.only(right: 14),
                                         height: 28,
                                         width: 81,
                                         child: ElevatedButton(
@@ -214,7 +219,9 @@ class _HomeState extends State<Home> {
                     width: 81,
                     height: 28,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        user.doc(id).update({"status": "Done"});
+                      },
                       style: ElevatedButton.styleFrom(backgroundColor: PRIMARY_COLOR),
                       child: Text("Done"),
                     )),
