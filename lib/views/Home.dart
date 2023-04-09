@@ -172,7 +172,10 @@ class _HomeState extends State<Home> {
                                         height: 28,
                                         width: 81,
                                         child: ElevatedButton(
-                                          onPressed: () {},
+                                          onPressed: () {
+                                            user.doc(id).delete();
+                                            Navigator.pop(context);
+                                          },
                                           child: Text(
                                             "Delete",
                                             style: TextStyle(color: Colors.red),
