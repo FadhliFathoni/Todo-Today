@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "427836812978",
+    "project_id": "todo-today-74b74",
+    "storage_bucket": "todo-today-74b74.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427836812978:android:3ee7d68bb4321c6b38e3ab",
+        "android_client_info": {
+          "package_name": "com.example.todo_today"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "427836812978-vghllrdlj0f4cb9toatm9e8pkccfp6uo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6FqFjjD9qg5TqAIRu3t5TXUrkTLeeCMc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "427836812978-vghllrdlj0f4cb9toatm9e8pkccfp6uo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
