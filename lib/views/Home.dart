@@ -57,17 +57,17 @@ class _HomeState extends State<Home> {
       margin: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 5,
+        elevation: 2,
         child: Container(
+          height: 130,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.white,
           ),
-          height: 150,
           padding: EdgeInsets.symmetric(vertical: 11, horizontal: 20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Container(
-              margin: EdgeInsets.only(top: 24, right: 20),
+              margin: EdgeInsets.only(top: 24, right: 20, bottom: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -193,8 +193,8 @@ class _HomeState extends State<Home> {
                                         child: ElevatedButton(
                                           onPressed: () {
                                             user.doc(id).update({
-                                              "title": titleController.text,
-                                              "description": descriptionController.text,
+                                              "title": (titleController.text.isNotEmpty) ? titleController.text : title,
+                                              "description": (descriptionController.text.isNotEmpty) ? descriptionController.text : description,
                                               "time": "${time.hour}:${time.minute}",
                                             });
                                             Navigator.pop(context);
@@ -209,7 +209,7 @@ class _HomeState extends State<Home> {
                           },
                         );
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0),
                       child: Text(
                         "Edit",
                         style: TextStyle(color: PRIMARY_COLOR),
