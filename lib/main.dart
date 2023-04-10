@@ -4,9 +4,11 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/core/notifications.dart';
 import 'package:todo_today/views/History.dart';
 import 'package:todo_today/views/Home.dart';
+import 'package:todo_today/views/LoginPage.dart';
 import 'package:workmanager/workmanager.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -21,7 +23,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+  Workmanager().initialize(callbackDispatcher);
   runApp(MyApp());
 }
 
@@ -34,29 +36,8 @@ const simplePeriodic1HourTask = "be.tramckrijte.workmanagerExample.simplePeriodi
 
 @pragma('vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
 void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    switch (task) {
-      case simpleTaskKey:
-        print("$simpleTaskKey was executed. inputData = $inputData");
-        Notifications().sendNotification("Tes");
-        break;
-      case rescheduledTaskKey:
-        final key = inputData!['key']!;
-        break;
-      case failedTaskKey:
-        print('failed task');
-        return Future.error('failed');
-      case simpleDelayedTask:
-        print("$simpleDelayedTask was executed");
-        break;
-      case simplePeriodicTask:
-        print("$simplePeriodicTask was executed");
-        break;
-      case simplePeriodic1HourTask:
-        print("$simplePeriodic1HourTask was executed");
-        break;
-    }
-
+  Workmanager().executeTask((task, inputData) {
+    print("THIS IS FROM CALLBACK");
     return Future.value(true);
   });
 }
@@ -66,12 +47,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: MainPage());
+    return MaterialApp(debugShowCheckedModeBanner: false, home: LoginPage());
   }
 }
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  String user;
+  MainPage({required this.user});
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -95,26 +77,29 @@ class _MainPageState extends State<MainPage> {
     var initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
-    Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
-    Workmanager().registerPeriodicTask(simpleTaskKey, simpleTaskKey);
+    Workmanager().initialize(callbackDispatcher);
   }
 
   Widget? buildBody() {
     switch (currentIndex) {
       case 0:
-        return Home();
+        return Home(
+          user: widget.user,
+        );
       case 1:
-        return History();
+        return History(
+          user: widget.user,
+        );
     }
   }
 
-  Duration duration(int hour, int minute) {
+  Duration duration(int hour, int minute, String title) {
     final now = DateTime.now();
     final scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
 
     final delay = scheduledTime.difference(now);
     Future.delayed(delay, () {
-      Notifications().sendNotification("Ini aku nyoba lagi");
+      Notifications().sendNotification(title);
     });
 
     return delay;
@@ -123,14 +108,23 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference user = firestore.collection("user1");
+    CollectionReference user = firestore.collection(widget.user);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         centerTitle: true,
-        title: Text(
-          "TODO TODAY!!!",
-          style: TextStyle(color: Colors.black),
+        title: GestureDetector(
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return LoginPage();
+              },
+            ));
+          },
+          child: Text(
+            "TODO TODAY!!!",
+            style: TextStyle(color: Colors.black),
+          ),
         ),
       ),
       body: buildBody(),
@@ -149,7 +143,6 @@ class _MainPageState extends State<MainPage> {
         mini: true,
         backgroundColor: PRIMARY_COLOR,
         onPressed: () {
-          print("Hello");
           showDialog(
             context: context,
             builder: (context) {
@@ -251,7 +244,7 @@ class _MainPageState extends State<MainPage> {
                                 "status": "Not done yet",
                                 "daily": isDaily
                               });
-                              Workmanager().registerOneOffTask(newdata.id, newdata.id, initialDelay: duration(time.hour, time.minute));
+                              await Workmanager().registerOneOffTask(simpleTaskKey, simpleTaskKey, initialDelay: duration(time.hour, time.minute, title.text));
                               Navigator.pop(context);
                             },
                             child: Text("Create"),

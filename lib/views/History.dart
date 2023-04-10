@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:todo_today/main.dart';
 
 class History extends StatefulWidget {
-  const History({super.key});
+  String user;
+  History({required this.user});
 
   @override
   State<History> createState() => HistoryState();
@@ -15,7 +16,7 @@ class HistoryState extends State<History> {
   @override
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference user = firestore.collection("user1");
+    CollectionReference user = firestore.collection(widget.user);
     return Scaffold(
         body: StreamBuilder(
       stream: user.snapshots(),
@@ -25,7 +26,7 @@ class HistoryState extends State<History> {
             children: snapshot.data!.docs.map((e) {
               var data = e.data() as Map<String, dynamic>;
               if (data['status'] == "Done") {
-                return riwayatCard(user, data['title'], data['description'], data['time']);
+                return riwayatCard(user, data['title'], data['description'], data['time'], e.id);
               } else {
                 return Container();
               }
@@ -44,9 +45,9 @@ class HistoryState extends State<History> {
     ));
   }
 
-  Container riwayatCard(CollectionReference user, String title, String description, String remaining) {
+  Container riwayatCard(CollectionReference user, String title, String description, String remaining, String id) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+      margin: EdgeInsets.symmetric(vertical: 14, horizontal: 20),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 2,
@@ -55,31 +56,43 @@ class HistoryState extends State<History> {
             borderRadius: BorderRadius.circular(20),
             color: Colors.white,
           ),
-          height: 100,
+          height: 120,
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.center, children: [
             Container(
-              margin: EdgeInsets.only(right: 20),
+              margin: EdgeInsets.only(right: 20, top: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      Text(
-                        remaining,
-                        style: TextStyle(fontSize: 16),
-                      )
-                    ],
+                  Container(
+                    margin: EdgeInsets.only(right: 14),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        Text(
+                          remaining,
+                          style: TextStyle(fontSize: 16),
+                        )
+                      ],
+                    ),
                   ),
                   Text(
                     description,
                     style: TextStyle(color: Colors.grey),
                   ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () {
+                          user.doc(id).delete();
+                        },
+                        child: Text("Delete")),
+                  )
                 ],
               ),
             ),

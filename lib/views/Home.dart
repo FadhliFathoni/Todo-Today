@@ -8,7 +8,8 @@ import 'package:todo_today/main.dart';
 import 'package:workmanager/workmanager.dart';
 
 class Home extends StatefulWidget {
-  const Home({super.key});
+  String user;
+  Home({required this.user});
 
   @override
   State<Home> createState() => _HomeState();
@@ -22,14 +23,12 @@ class _HomeState extends State<Home> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    // callbackDispatcher();
-    Workmanager().registerOneOffTask("12345789", "12345789");
   }
 
   @override
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference user = firestore.collection("user1");
+    CollectionReference user = firestore.collection(widget.user);
     return Scaffold(
       body: Container(
           padding: EdgeInsets.only(top: 7),
