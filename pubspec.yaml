@@ -40,7 +40,10 @@ dependencies:
   firebase_messaging: ^14.4.0
   flutter_local_notifications: ^13.0.0
   flutter_native_timezone: ^2.0.0
-  android_alarm_manager_plus: ^2.1.1
+  flutter_background_service: ^2.4.6
+  flutter_background_service_android: ^3.0.3
+  permission_handler: ^10.2.0
+  flutter_background_service_ios: ^2.4.0
   workmanager: ^0.5.1
 
 dev_dependencies:

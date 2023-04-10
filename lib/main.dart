@@ -2,11 +2,12 @@
 
 import 'dart:async';
 
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:todo_today/core/notifications.dart';
 import 'package:todo_today/views/History.dart';
 import 'package:todo_today/views/Home.dart';
+import 'package:workmanager/workmanager.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -20,19 +21,45 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // await AndroidAlarmManager.initialize();
-  // final int periodicID = 0;
-  // await AndroidAlarmManager.periodic(const Duration(hours: 24), periodicID, daily, startAt: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, 0, 0, 0));
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
   runApp(MyApp());
 }
 
-// void daily(CollectionReference user, String id) async {
-//   user.doc(id).update({"status": "Not done yet"});
-//   var androidPlatformChannelSpecifics = const AndroidNotificationDetails('your_channel_id', 'your_channel_name', importance: Importance.high, priority: Priority.high, ticker: 'ticker');
-//   // var iOSPlatformChannelSpecifics = IOSNotificationDetails(presentSound: true, presentBadge: true, presentAlert: true);
-//   var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
-//   await flutterLocalNotificationsPlugin?.show(0, "Reset", 'Todo telah reset, ayo buat list😀', platformChannelSpecifics, payload: 'item x');
-// }
+const simpleTaskKey = "be.tramckrijte.workmanagerExample.simpleTask";
+const rescheduledTaskKey = "be.tramckrijte.workmanagerExample.rescheduledTask";
+const failedTaskKey = "be.tramckrijte.workmanagerExample.failedTask";
+const simpleDelayedTask = "be.tramckrijte.workmanagerExample.simpleDelayedTask";
+const simplePeriodicTask = "be.tramckrijte.workmanagerExample.simplePeriodicTask";
+const simplePeriodic1HourTask = "be.tramckrijte.workmanagerExample.simplePeriodic1HourTask";
+
+@pragma('vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    switch (task) {
+      case simpleTaskKey:
+        print("$simpleTaskKey was executed. inputData = $inputData");
+        Notifications().sendNotification("Tes");
+        break;
+      case rescheduledTaskKey:
+        final key = inputData!['key']!;
+        break;
+      case failedTaskKey:
+        print('failed task');
+        return Future.error('failed');
+      case simpleDelayedTask:
+        print("$simpleDelayedTask was executed");
+        break;
+      case simplePeriodicTask:
+        print("$simplePeriodicTask was executed");
+        break;
+      case simplePeriodic1HourTask:
+        print("$simplePeriodic1HourTask was executed");
+        break;
+    }
+
+    return Future.value(true);
+  });
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -65,47 +92,11 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     var initializationSettingsAndroid = const AndroidInitializationSettings('@mipmap/ic_launcher');
-    // var initializationSettingsIOS = const IOSInitializationSettings();
     var initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  }
-
-  void startTimer(int hour, int minute, String title) {
-    DateTime now = DateTime.now();
-    DateTime timerEnd = DateTime(now.year, now.month, now.day, hour, minute, 0);
-    Duration duration = timerEnd.difference(now);
-
-    if (_timer != null) {
-      _timer!.cancel();
-    }
-
-    _timer = Timer(duration, () {
-      _sendNotification(title);
-      print("This is notification");
-    });
-  }
-
-  void notDaily(CollectionReference user, String id) {
-    DateTime now = DateTime.now();
-    DateTime timerEnd = DateTime(now.year, now.month, now.day, 0, 0, 0);
-    Duration duration = timerEnd.difference(now);
-
-    if (_timer != null) {
-      _timer!.cancel();
-    }
-
-    _timer = Timer(duration, () {
-      user.doc(id).delete();
-      print("This is notification");
-    });
-  }
-
-  void _sendNotification(String title) async {
-    var androidPlatformChannelSpecifics = const AndroidNotificationDetails('your_channel_id', 'your_channel_name', importance: Importance.high, priority: Priority.high, ticker: 'ticker');
-    // var iOSPlatformChannelSpecifics = IOSNotificationDetails(presentSound: true, presentBadge: true, presentAlert: true);
-    var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.show(0, title, "It's time!!!, let's do it😀", platformChannelSpecifics, payload: 'item x');
+    Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+    Workmanager().registerPeriodicTask(simpleTaskKey, simpleTaskKey);
   }
 
   Widget? buildBody() {
@@ -115,6 +106,18 @@ class _MainPageState extends State<MainPage> {
       case 1:
         return History();
     }
+  }
+
+  Duration duration(int hour, int minute) {
+    final now = DateTime.now();
+    final scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
+
+    final delay = scheduledTime.difference(now);
+    Future.delayed(delay, () {
+      Notifications().sendNotification("Ini aku nyoba lagi");
+    });
+
+    return delay;
   }
 
   @override
@@ -146,6 +149,7 @@ class _MainPageState extends State<MainPage> {
         mini: true,
         backgroundColor: PRIMARY_COLOR,
         onPressed: () {
+          print("Hello");
           showDialog(
             context: context,
             builder: (context) {
@@ -239,8 +243,7 @@ class _MainPageState extends State<MainPage> {
                           width: 81,
                           child: ElevatedButton(
                             onPressed: () async {
-                              // var newdata = await
-                              user.add({
+                              var newdata = await user.add({
                                 "title": title.text,
                                 "description": description.text,
                                 "date": DateTime.now().toString(),
@@ -248,13 +251,7 @@ class _MainPageState extends State<MainPage> {
                                 "status": "Not done yet",
                                 "daily": isDaily
                               });
-                              startTimer(time.hour, time.minute, title.text);
-                              // if (isDaily == false) {
-                              //   notDaily(user, newdata.id);
-                              // }
-                              // else {
-
-                              // }
+                              Workmanager().registerOneOffTask(newdata.id, newdata.id, initialDelay: duration(time.hour, time.minute));
                               Navigator.pop(context);
                             },
                             child: Text("Create"),

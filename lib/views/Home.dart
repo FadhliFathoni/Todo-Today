@@ -2,7 +2,10 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:todo_today/core/notifications.dart';
 import 'package:todo_today/main.dart';
+import 'package:workmanager/workmanager.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -15,6 +18,14 @@ class _HomeState extends State<Home> {
   double width(BuildContext context) => MediaQuery.of(context).size.width;
   double height(BuildContext context) => MediaQuery.of(context).size.height;
   TimeOfDay time = TimeOfDay.now();
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    // callbackDispatcher();
+    Workmanager().registerOneOffTask("12345789", "12345789");
+  }
+
   @override
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
