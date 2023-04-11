@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_today/core/background.dart';
 import 'package:todo_today/main.dart';
 
 class LoginPage extends StatefulWidget {
@@ -12,13 +14,14 @@ class _LoginPageState extends State<LoginPage> {
   List<String> person = ["Fadhli", "Rchyla"];
   double height(BuildContext context) => MediaQuery.of(context).size.height;
   double width(BuildContext context) => MediaQuery.of(context).size.width;
-  
+
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,9 +53,11 @@ class _LoginPageState extends State<LoginPage> {
                         itemBuilder: (context, index) {
                           return Center(
                               child: TextButton(
-                            onPressed: () {
+                            onPressed: () async {
+                              final prefs = await SharedPreferences.getInstance();
+                              await initializeService();
                               String name = person[index];
-                              // prefs.setString('user', name);
+                              prefs.setString('user', name);
                               Navigator.pushReplacement(context, MaterialPageRoute(
                                 builder: (context) {
                                   return MainPage(user: name);

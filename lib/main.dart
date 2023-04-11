@@ -1,9 +1,9 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, sized_box_for_whitespace
 
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/core/background.dart';
 import 'package:todo_today/views/History.dart';
 import 'package:todo_today/views/Home.dart';
@@ -12,8 +12,8 @@ import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-Color PRIMARY_COLOR = Color.fromARGB(255, 255, 142, 61);
-Color BG_COLOR = Color.fromARGB(255, 239, 240, 243);
+Color PRIMARY_COLOR = Color.fromARGB(255, 164, 83, 56);
+Color BG_COLOR = Color.fromARGB(255, 193, 200, 192);
 
 FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
 
@@ -21,7 +21,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await initializeService();
+  
   runApp(MyApp());
 }
 
@@ -52,9 +52,20 @@ class _MainPageState extends State<MainPage> {
   bool isDaily = false;
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
+  void checkUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    var user = prefs.getString('user');
+    if (user!.isEmpty || user == "" || user == null) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
+        return LoginPage();
+      }));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    checkUser();
     var initializationSettingsAndroid = const AndroidInitializationSettings('@mipmap/ic_launcher');
     var initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -83,8 +94,10 @@ class _MainPageState extends State<MainPage> {
         backgroundColor: Colors.white,
         centerTitle: true,
         title: GestureDetector(
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(
+          onTap: () async {
+            final prefs = await SharedPreferences.getInstance();
+            prefs.clear();
+            Navigator.pushReplacement(context, MaterialPageRoute(
               builder: (context) {
                 return LoginPage();
               },

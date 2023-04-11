@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:todo_today/main.dart';
 
 class History extends StatefulWidget {
   String user;
@@ -17,30 +18,33 @@ class HistoryState extends State<History> {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference user = firestore.collection(widget.user);
     return Scaffold(
-        body: StreamBuilder(
-      stream: user.snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          return ListView(
-            children: snapshot.data!.docs.map((e) {
-              var data = e.data() as Map<String, dynamic>;
-              if (data['status'] == "Done") {
-                return riwayatCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", e.id);
-              } else {
-                return Container();
-              }
-            }).toList(),
-          );
-        } else if (snapshot.hasError) {
-          return Center(
-            child: Text("There is an error"),
-          );
-        } else {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-      },
+        body: Container(
+      color: BG_COLOR,
+      child: StreamBuilder(
+        stream: user.snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return ListView(
+              children: snapshot.data!.docs.map((e) {
+                var data = e.data() as Map<String, dynamic>;
+                if (data['status'] == "Done") {
+                  return riwayatCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", e.id);
+                } else {
+                  return Container();
+                }
+              }).toList(),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text("There is an error"),
+            );
+          } else {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        },
+      ),
     ));
   }
 
@@ -59,7 +63,7 @@ class HistoryState extends State<History> {
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.center, children: [
             Container(
-              margin: EdgeInsets.only(right: 20, top: 24),
+              margin: EdgeInsets.only(top: 15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -83,15 +87,6 @@ class HistoryState extends State<History> {
                     description,
                     style: TextStyle(color: Colors.grey),
                   ),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                        onPressed: () {
-                          user.doc(id).delete();
-                        },
-                        child: Text("Delete")),
-                  )
                 ],
               ),
             ),

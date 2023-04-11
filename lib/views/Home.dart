@@ -17,6 +17,7 @@ class _HomeState extends State<Home> {
   double width(BuildContext context) => MediaQuery.of(context).size.width;
   double height(BuildContext context) => MediaQuery.of(context).size.height;
   TimeOfDay time = TimeOfDay.now();
+  var list = [];
 
   @override
   void initState() {
@@ -29,22 +30,100 @@ class _HomeState extends State<Home> {
     CollectionReference user = firestore.collection(widget.user);
     return Scaffold(
       body: Container(
-          padding: EdgeInsets.only(top: 7),
+          height: height(context),
           color: BG_COLOR,
           child: StreamBuilder(
-            stream: user.orderBy('hour').snapshots(),
+            stream: user.orderBy('daily', descending: true).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasData) {
-                return ListView(
-                  children: snapshot.data!.docs.map((e) {
-                    var data = e.data() as Map<String, dynamic>;
-                    var title = data['title'];
-                    if (data['status'] != "Done") {
-                      return todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", e.id, data['daily']);
-                    } else {
-                      return Container();
-                    }
-                  }).toList(),
+                int firstIndex = 0;
+                var listData = [];
+                for (int x = 0; x < snapshot.data!.docs.length; x++) {
+                  var data = snapshot.data?.docs[x].data() as Map<String, dynamic>;
+                  if (data['daily'] == false && data['status'] != "Done") {
+                    firstIndex = x;
+                    listData.add(data);
+                  } else if (data['daily'] == true && data['status'] != "Done") {
+                    listData.add(data);
+                  }
+                }
+                for (int x = 0; x < listData.length; x++) {
+                  if (listData[x]['daily'] == false) {
+                    firstIndex = x;
+                    break;
+                  }
+                }
+                for (int x = 0; x < listData.length; x++) {
+                  print(listData[x]);
+                }
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: listData.length,
+                        itemBuilder: (context, index) {
+                          var data = listData[index];
+                          if (data['daily'] == true) {
+                            if (index == 0) {
+                              return Container(
+                                height: 250,
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                        child: Image.asset(
+                                      "assets/images/batu-daily.png",
+                                      width: 200,
+                                    )),
+                                    Positioned(
+                                      top: 100,
+                                      child: Container(
+                                        width: width(context),
+                                        child: Container(
+                                            width: width(context),
+                                            child: todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", snapshot.data!.docs[index].id, data['daily'])),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            } else {
+                              return Container(
+                                  width: width(context), child: todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", snapshot.data!.docs[index].id, data['daily']));
+                            }
+                          } else {
+                            if (index == firstIndex) {
+                              return Container(
+                                height: 250,
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                        top: -70,
+                                        right: -40,
+                                        child: Image.asset(
+                                          "assets/images/batu-not-daily.png",
+                                          width: 300,
+                                        )),
+                                    Positioned(
+                                      top: 100,
+                                      child: Container(
+                                        width: width(context),
+                                        child: Container(
+                                            width: width(context),
+                                            child: todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", snapshot.data!.docs[index].id, data['daily'])),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            } else {
+                              return todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", snapshot.data!.docs[index].id, data['daily']);
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 );
               } else if (snapshot.hasError) {
                 return Center(
@@ -63,7 +142,8 @@ class _HomeState extends State<Home> {
     var descriptionController = TextEditingController();
     var isDaily = isdaily;
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
+      // width: 100,
+      margin: EdgeInsets.only(left: 20, right: 20, top: 10),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 2,

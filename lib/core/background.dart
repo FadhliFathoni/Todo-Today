@@ -95,7 +95,7 @@ void onStart(ServiceInstance service) async {
 
     service.on('setAsBackground').listen((event) {
       service.setAsBackgroundService();
-      initializeService();
+      // initializeService();
     });
   }
 
@@ -104,7 +104,7 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-  Timer.periodic(const Duration(seconds: 1), (timer) async {
+  Timer.periodic(const Duration(seconds: 5), (timer) async {
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
         /// OPTIONAL for use custom notification
@@ -124,7 +124,9 @@ void onStart(ServiceInstance service) async {
         // );
         await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
         var firestore = FirebaseFirestore.instance;
-        CollectionReference user = firestore.collection('Fadhli');
+        final prefs = await SharedPreferences.getInstance();
+        var name = prefs.getString('user');
+        CollectionReference user = await firestore.collection("Fadhli");
         user.snapshots().listen((QuerySnapshot snapshot) {
           var androidPlatformChannelSpecifics = const AndroidNotificationDetails('your_channel_id', 'Reminder', importance: Importance.high, priority: Priority.high, ticker: 'ticker');
           var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -135,9 +137,7 @@ void onStart(ServiceInstance service) async {
             }
             if (TimeOfDay.now().hour == 0) {
               if (data['daily'] == true) {
-                user.doc(doc.id).update({
-                  "status":"Not done yet"
-                });
+                user.doc(doc.id).update({"status": "Not done yet"});
               } else {
                 user.doc(doc.id).delete();
               }
