@@ -26,7 +26,7 @@ class HistoryState extends State<History> {
             children: snapshot.data!.docs.map((e) {
               var data = e.data() as Map<String, dynamic>;
               if (data['status'] == "Done") {
-                return riwayatCard(user, data['title'], data['description'], data['time'], e.id);
+                return riwayatCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", e.id);
               } else {
                 return Container();
               }

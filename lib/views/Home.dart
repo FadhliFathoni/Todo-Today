@@ -2,10 +2,11 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:todo_today/core/background.dart';
 import 'package:todo_today/core/notifications.dart';
 import 'package:todo_today/main.dart';
-import 'package:workmanager/workmanager.dart';
 
 class Home extends StatefulWidget {
   String user;
@@ -19,9 +20,9 @@ class _HomeState extends State<Home> {
   double width(BuildContext context) => MediaQuery.of(context).size.width;
   double height(BuildContext context) => MediaQuery.of(context).size.height;
   TimeOfDay time = TimeOfDay.now();
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
   }
 
@@ -34,7 +35,7 @@ class _HomeState extends State<Home> {
           padding: EdgeInsets.only(top: 7),
           color: BG_COLOR,
           child: StreamBuilder(
-            stream: user.orderBy('time').snapshots(),
+            stream: user.orderBy('hour').snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 return ListView(
@@ -42,7 +43,7 @@ class _HomeState extends State<Home> {
                     var data = e.data() as Map<String, dynamic>;
                     var title = data['title'];
                     if (data['status'] != "Done") {
-                      return todoCard(user, data['title'], data['description'], data['time'], e.id);
+                      return todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", e.id, data['daily']);
                     } else {
                       return Container();
                     }
@@ -60,9 +61,10 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Container todoCard(CollectionReference user, String title, String description, String remaining, String id) {
+  Container todoCard(CollectionReference user, String title, String description, String remaining, String id, bool isdaily) {
     var titleController = TextEditingController();
     var descriptionController = TextEditingController();
+    var isDaily = isdaily;
     return Container(
       margin: EdgeInsets.symmetric(vertical: 7, horizontal: 20),
       child: Card(
@@ -117,7 +119,7 @@ class _HomeState extends State<Home> {
                                 return AlertDialog(
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                   content: Container(
-                                    height: height(context) * 0.25,
+                                    height: height(context) * 0.28,
                                     width: width(context) * 0.7,
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,6 +179,19 @@ class _HomeState extends State<Home> {
                                               });
                                             }
                                           },
+                                        ),
+                                        Row(
+                                          children: [
+                                            Checkbox(
+                                                value: isDaily,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    isDaily = !isDaily;
+                                                    print(isDaily);
+                                                  });
+                                                }),
+                                            Text("Everyday"),
+                                          ],
                                         )
                                       ],
                                     ),
@@ -205,8 +220,11 @@ class _HomeState extends State<Home> {
                                             user.doc(id).update({
                                               "title": (titleController.text.isNotEmpty) ? titleController.text : title,
                                               "description": (descriptionController.text.isNotEmpty) ? descriptionController.text : description,
-                                              "time": "${time.hour}:${time.minute}",
+                                              "hour": "${time.hour}",
+                                              "minute": "${time.minute}",
+                                              "daily": isDaily
                                             });
+                                            FlutterBackgroundService().invoke("setAsBackground");
                                             Navigator.pop(context);
                                           },
                                           child: Text("Update"),

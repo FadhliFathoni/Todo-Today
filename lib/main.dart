@@ -4,15 +4,17 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_today/core/background.dart';
 import 'package:todo_today/core/notifications.dart';
 import 'package:todo_today/views/History.dart';
 import 'package:todo_today/views/Home.dart';
 import 'package:todo_today/views/LoginPage.dart';
-import 'package:workmanager/workmanager.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:todo_today/core/background.dart';
 
 Color PRIMARY_COLOR = Color.fromARGB(255, 255, 142, 61);
 Color BG_COLOR = Color.fromARGB(255, 239, 240, 243);
@@ -23,23 +25,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  Workmanager().initialize(callbackDispatcher);
+  await initializeService();
   runApp(MyApp());
-}
-
-const simpleTaskKey = "be.tramckrijte.workmanagerExample.simpleTask";
-const rescheduledTaskKey = "be.tramckrijte.workmanagerExample.rescheduledTask";
-const failedTaskKey = "be.tramckrijte.workmanagerExample.failedTask";
-const simpleDelayedTask = "be.tramckrijte.workmanagerExample.simpleDelayedTask";
-const simplePeriodicTask = "be.tramckrijte.workmanagerExample.simplePeriodicTask";
-const simplePeriodic1HourTask = "be.tramckrijte.workmanagerExample.simplePeriodic1HourTask";
-
-@pragma('vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) {
-    print("THIS IS FROM CALLBACK");
-    return Future.value(true);
-  });
 }
 
 class MyApp extends StatelessWidget {
@@ -47,7 +34,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: LoginPage());
+    return MaterialApp(color: Colors.white, title: "Todo Today", debugShowCheckedModeBanner: false, home: LoginPage());
   }
 }
 
@@ -77,7 +64,6 @@ class _MainPageState extends State<MainPage> {
     var initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
-    Workmanager().initialize(callbackDispatcher);
   }
 
   Widget? buildBody() {
@@ -91,18 +77,6 @@ class _MainPageState extends State<MainPage> {
           user: widget.user,
         );
     }
-  }
-
-  Duration duration(int hour, int minute, String title) {
-    final now = DateTime.now();
-    final scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
-
-    final delay = scheduledTime.difference(now);
-    Future.delayed(delay, () {
-      Notifications().sendNotification(title);
-    });
-
-    return delay;
   }
 
   @override
@@ -143,6 +117,7 @@ class _MainPageState extends State<MainPage> {
         mini: true,
         backgroundColor: PRIMARY_COLOR,
         onPressed: () {
+          FlutterBackgroundService().invoke("setAsBackground");
           showDialog(
             context: context,
             builder: (context) {
@@ -236,16 +211,17 @@ class _MainPageState extends State<MainPage> {
                           width: 81,
                           child: ElevatedButton(
                             onPressed: () async {
-                              var newdata = await user.add({
+                              await user.add({
                                 "title": title.text,
                                 "description": description.text,
                                 "date": DateTime.now().toString(),
-                                "time": "${time.hour}:${time.minute}",
+                                "hour": "${time.hour}",
+                                "minute": "${time.minute}",
                                 "status": "Not done yet",
                                 "daily": isDaily
                               });
-                              await Workmanager().registerOneOffTask(simpleTaskKey, simpleTaskKey, initialDelay: duration(time.hour, time.minute, title.text));
                               Navigator.pop(context);
+                              FlutterBackgroundService().invoke("setAsBackground");
                             },
                             child: Text("Create"),
                             style: ElevatedButton.styleFrom(backgroundColor: PRIMARY_COLOR),

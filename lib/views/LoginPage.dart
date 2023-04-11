@@ -13,6 +13,13 @@ class _LoginPageState extends State<LoginPage> {
   List<String> person = ["Fadhli", "Rchyla"];
   double height(BuildContext context) => MediaQuery.of(context).size.height;
   double width(BuildContext context) => MediaQuery.of(context).size.width;
+  
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

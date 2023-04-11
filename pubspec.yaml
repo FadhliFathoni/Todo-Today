@@ -44,9 +44,9 @@ dependencies:
   flutter_background_service_android: ^3.0.3
   permission_handler: ^10.2.0
   flutter_background_service_ios: ^2.4.0
-  workmanager: ^0.5.1
   shared_preferences: ^2.1.0
   flutter_launcher_icons: ^0.13.0
+  device_info_plus: ^8.2.0
 
 dev_dependencies:
   flutter_test:
