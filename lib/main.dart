@@ -1,20 +1,16 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, sized_box_for_whitespace
 
-import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/core/background.dart';
-import 'package:todo_today/core/notifications.dart';
 import 'package:todo_today/views/History.dart';
 import 'package:todo_today/views/Home.dart';
 import 'package:todo_today/views/LoginPage.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:todo_today/core/background.dart';
 
 Color PRIMARY_COLOR = Color.fromARGB(255, 255, 142, 61);
 Color BG_COLOR = Color.fromARGB(255, 239, 240, 243);
@@ -53,7 +49,6 @@ class _MainPageState extends State<MainPage> {
   TextEditingController title = TextEditingController();
   TextEditingController description = TextEditingController();
   int currentIndex = 0;
-  Timer? _timer;
   bool isDaily = false;
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 

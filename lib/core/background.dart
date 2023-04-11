@@ -133,8 +133,14 @@ void onStart(ServiceInstance service) async {
             if (data['hour'] == TimeOfDay.now().hour.toString() && data['minute'] == TimeOfDay.now().minute.toString()) {
               flutterLocalNotificationsPlugin.show(0, data['title'], "It's time!!!, let's do it😀", platformChannelSpecifics, payload: 'item x');
             }
-            if (data['daily'] == false && TimeOfDay.now().hour == 0) {
-              user.doc(doc.id).delete();
+            if (TimeOfDay.now().hour == 0) {
+              if (data['daily'] == true) {
+                user.doc(doc.id).update({
+                  "status":"Not done yet"
+                });
+              } else {
+                user.doc(doc.id).delete();
+              }
             }
           }
         });
