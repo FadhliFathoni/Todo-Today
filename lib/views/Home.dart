@@ -53,9 +53,6 @@ class _HomeState extends State<Home> {
                     break;
                   }
                 }
-                for (int x = 0; x < listData.length; x++) {
-                  print(listData[x]);
-                }
                 return Column(
                   children: [
                     Expanded(
@@ -70,11 +67,30 @@ class _HomeState extends State<Home> {
                                 height: 250,
                                 child: Stack(
                                   children: [
-                                    Positioned(
-                                        child: Image.asset(
-                                      "assets/images/batu-daily.png",
-                                      width: 200,
-                                    )),
+                                    Stack(
+                                      children: [
+                                        Image.asset(
+                                          "assets/images/batu-daily.png",
+                                          width: 200,
+                                        ),
+                                        Positioned(
+                                          left: 0,
+                                          right: 0,
+                                          top: -40,
+                                          bottom: 0,
+                                          child: Container(
+                                            color: Colors.transparent,
+                                            height: 100,
+                                            width: 100,
+                                            child: Center(
+                                                child: Text(
+                                              "Daily",
+                                              style: TextStyle(color: Colors.white, fontFamily: "DeliciousHandrawn", fontSize: 36),
+                                            )),
+                                          ),
+                                        )
+                                      ],
+                                    ),
                                     Positioned(
                                       top: 100,
                                       child: Container(
@@ -98,12 +114,33 @@ class _HomeState extends State<Home> {
                                 child: Stack(
                                   children: [
                                     Positioned(
-                                        top: -70,
-                                        right: -40,
-                                        child: Image.asset(
-                                          "assets/images/batu-not-daily.png",
-                                          width: 300,
-                                        )),
+                                      top: -40,
+                                      right: 0,
+                                      child: Stack(
+                                        children: [
+                                          Image.asset(
+                                            "assets/images/batu-not-daily.png",
+                                            width: 250,
+                                          ),
+                                          Positioned(
+                                            left: 0,
+                                            right: 0,
+                                            top: 10,
+                                            bottom: 0,
+                                            child: Container(
+                                              color: Colors.transparent,
+                                              height: 100,
+                                              width: 100,
+                                              child: Center(
+                                                  child: Text(
+                                                "Not Daily",
+                                                style: TextStyle(color: Colors.white, fontFamily: "DeliciousHandrawn", fontSize: 36),
+                                              )),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    ),
                                     Positioned(
                                       top: 100,
                                       child: Container(
@@ -148,7 +185,6 @@ class _HomeState extends State<Home> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 2,
         child: Container(
-          height: 130,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.white,
@@ -165,17 +201,17 @@ class _HomeState extends State<Home> {
                     children: [
                       Text(
                         title,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(fontFamily: PRIMARY_FONT, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       Text(
                         remaining,
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(fontFamily: PRIMARY_FONT, fontSize: 16),
                       )
                     ],
                   ),
                   Text(
                     description,
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(fontFamily: PRIMARY_FONT, color: Colors.grey),
                   ),
                 ],
               ),
@@ -204,7 +240,7 @@ class _HomeState extends State<Home> {
                                         Center(
                                             child: Text(
                                           "Update",
-                                          style: TextStyle(color: PRIMARY_COLOR),
+                                          style: TextStyle(fontFamily: PRIMARY_FONT, color: PRIMARY_COLOR),
                                         )),
                                         Container(
                                           margin: EdgeInsets.only(top: 14),
@@ -213,7 +249,10 @@ class _HomeState extends State<Home> {
                                             controller: titleController,
                                             maxLength: 30,
                                             cursorColor: PRIMARY_COLOR,
+                                            style: TextStyle(fontFamily: PRIMARY_FONT),
                                             decoration: InputDecoration(
+                                              counterStyle: TextStyle(fontFamily: PRIMARY_FONT),
+                                              hintStyle: TextStyle(fontFamily: PRIMARY_FONT),
                                               hintText: "Title",
                                               enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
                                               focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: PRIMARY_COLOR)),
@@ -227,7 +266,10 @@ class _HomeState extends State<Home> {
                                             controller: descriptionController,
                                             maxLength: 50,
                                             cursorColor: PRIMARY_COLOR,
+                                            style: TextStyle(fontFamily: PRIMARY_FONT),
                                             decoration: InputDecoration(
+                                              counterStyle: TextStyle(fontFamily: PRIMARY_FONT),
+                                              hintStyle: TextStyle(fontFamily: PRIMARY_FONT),
                                               hintText: "Description",
                                               enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
                                               focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: PRIMARY_COLOR)),
@@ -238,12 +280,18 @@ class _HomeState extends State<Home> {
                                           child: Row(
                                             children: [
                                               Container(
-                                                child: Text("${time.hour}"),
+                                                child: Text(
+                                                  "${time.hour}",
+                                                  style: TextStyle(fontFamily: PRIMARY_FONT),
+                                                ),
                                                 decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey))),
                                               ),
                                               Text(":"),
                                               Container(
-                                                child: Text("${time.minute}"),
+                                                child: Text(
+                                                  "${time.minute}",
+                                                  style: TextStyle(fontFamily: PRIMARY_FONT),
+                                                ),
                                                 decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey))),
                                               )
                                             ],
@@ -264,10 +312,12 @@ class _HomeState extends State<Home> {
                                                 onChanged: (value) {
                                                   setState(() {
                                                     isDaily = !isDaily;
-                                                    print(isDaily);
                                                   });
                                                 }),
-                                            Text("Everyday"),
+                                            Text(
+                                              "Everyday",
+                                              style: TextStyle(fontFamily: PRIMARY_FONT),
+                                            ),
                                           ],
                                         )
                                       ],
@@ -284,7 +334,7 @@ class _HomeState extends State<Home> {
                                           },
                                           child: Text(
                                             "Delete",
-                                            style: TextStyle(color: Colors.red),
+                                            style: TextStyle(fontFamily: PRIMARY_FONT, color: Colors.red),
                                           ),
                                           style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
                                         )),
@@ -304,7 +354,10 @@ class _HomeState extends State<Home> {
                                             FlutterBackgroundService().invoke("setAsBackground");
                                             Navigator.pop(context);
                                           },
-                                          child: Text("Update"),
+                                          child: Text(
+                                            "Update",
+                                            style: TextStyle(fontFamily: PRIMARY_FONT),
+                                          ),
                                           style: ElevatedButton.styleFrom(backgroundColor: PRIMARY_COLOR),
                                         )),
                                   ],
@@ -317,7 +370,7 @@ class _HomeState extends State<Home> {
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0),
                       child: Text(
                         "Edit",
-                        style: TextStyle(color: PRIMARY_COLOR),
+                        style: TextStyle(fontFamily: PRIMARY_FONT, color: PRIMARY_COLOR),
                       ),
                     )),
                 Container(
@@ -328,7 +381,10 @@ class _HomeState extends State<Home> {
                         user.doc(id).update({"status": "Done"});
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: PRIMARY_COLOR),
-                      child: Text("Done"),
+                      child: Text(
+                        "Done",
+                        style: TextStyle(fontFamily: "DeliciousHandrawn"),
+                      ),
                     )),
               ],
             )

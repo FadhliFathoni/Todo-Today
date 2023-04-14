@@ -15,13 +15,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 Color PRIMARY_COLOR = Color.fromARGB(255, 164, 83, 56);
 Color BG_COLOR = Color.fromARGB(255, 193, 200, 192);
 
+String PRIMARY_FONT = "DeliciousHandrawn";
+
 FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  
   runApp(MyApp());
 }
 
@@ -52,20 +53,9 @@ class _MainPageState extends State<MainPage> {
   bool isDaily = false;
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
-  void checkUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    var user = prefs.getString('user');
-    if (user!.isEmpty || user == "" || user == null) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
-        return LoginPage();
-      }));
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    checkUser();
     var initializationSettingsAndroid = const AndroidInitializationSettings('@mipmap/ic_launcher');
     var initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -102,15 +92,18 @@ class _MainPageState extends State<MainPage> {
                 return LoginPage();
               },
             ));
+            // FlutterBackgroundService().invoke("stopService");
           },
           child: Text(
-            "TODO TODAY!!!",
-            style: TextStyle(color: Colors.black),
+            "TODO TODAY",
+            style: TextStyle(color: Colors.black, fontFamily: PRIMARY_FONT, fontWeight: FontWeight.w600),
           ),
         ),
       ),
       body: buildBody(),
       bottomNavigationBar: BottomNavigationBar(
+          selectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
+          unselectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
           currentIndex: currentIndex,
           onTap: (value) {
             currentIndex = value;
@@ -142,7 +135,7 @@ class _MainPageState extends State<MainPage> {
                           Center(
                               child: Text(
                             "Create",
-                            style: TextStyle(color: PRIMARY_COLOR, fontWeight: FontWeight.w500, fontSize: 16),
+                            style: TextStyle(fontFamily: PRIMARY_FONT, color: PRIMARY_COLOR, fontWeight: FontWeight.w500, fontSize: 16),
                           )),
                           Container(
                             margin: EdgeInsets.only(top: 20),
@@ -151,7 +144,10 @@ class _MainPageState extends State<MainPage> {
                               controller: title,
                               maxLength: 30,
                               cursorColor: PRIMARY_COLOR,
+                              style: TextStyle(fontFamily: PRIMARY_FONT),
                               decoration: InputDecoration(
+                                counterStyle: TextStyle(fontFamily: PRIMARY_FONT),
+                                hintStyle: TextStyle(fontFamily: PRIMARY_FONT),
                                 contentPadding: EdgeInsets.symmetric(vertical: 0),
                                 hintText: "Title",
                                 enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
@@ -165,7 +161,10 @@ class _MainPageState extends State<MainPage> {
                               controller: description,
                               maxLength: 50,
                               cursorColor: PRIMARY_COLOR,
+                              style: TextStyle(fontFamily: PRIMARY_FONT),
                               decoration: InputDecoration(
+                                counterStyle: TextStyle(fontFamily: PRIMARY_FONT),
+                                hintStyle: TextStyle(fontFamily: PRIMARY_FONT),
                                 contentPadding: EdgeInsets.symmetric(vertical: 0),
                                 hintText: "Description",
                                 enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
@@ -177,12 +176,18 @@ class _MainPageState extends State<MainPage> {
                             child: Row(
                               children: [
                                 Container(
-                                  child: Text("${time.hour}"),
+                                  child: Text(
+                                    "${time.hour}",
+                                    style: TextStyle(fontFamily: PRIMARY_FONT),
+                                  ),
                                   decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey))),
                                 ),
                                 Text(":"),
                                 Container(
-                                  child: Text("${time.minute}"),
+                                  child: Text(
+                                    "${time.minute}",
+                                    style: TextStyle(fontFamily: PRIMARY_FONT),
+                                  ),
                                   decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey))),
                                 )
                               ],
@@ -206,7 +211,10 @@ class _MainPageState extends State<MainPage> {
                                   });
                                 },
                               ),
-                              Text("Everyday"),
+                              Text(
+                                "Everyday",
+                                style: TextStyle(fontFamily: PRIMARY_FONT),
+                              ),
                             ],
                           )
                         ],
@@ -231,7 +239,10 @@ class _MainPageState extends State<MainPage> {
                               Navigator.pop(context);
                               FlutterBackgroundService().invoke("setAsBackground");
                             },
-                            child: Text("Create"),
+                            child: Text(
+                              "Create",
+                              style: TextStyle(fontFamily: PRIMARY_FONT),
+                            ),
                             style: ElevatedButton.styleFrom(backgroundColor: PRIMARY_COLOR),
                           )),
                     ],

@@ -74,18 +74,18 @@ class HistoryState extends State<History> {
                       children: [
                         Text(
                           title,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(fontFamily: PRIMARY_FONT,fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         Text(
                           remaining,
-                          style: TextStyle(fontSize: 16),
+                          style: TextStyle(fontFamily: PRIMARY_FONT,fontSize: 16),
                         )
                       ],
                     ),
                   ),
                   Text(
                     description,
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(fontFamily: PRIMARY_FONT,color: Colors.grey),
                   ),
                 ],
               ),

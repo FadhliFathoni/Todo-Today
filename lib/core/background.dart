@@ -95,7 +95,7 @@ void onStart(ServiceInstance service) async {
 
     service.on('setAsBackground').listen((event) {
       service.setAsBackgroundService();
-      // initializeService();
+      initializeService();
     });
   }
 
@@ -125,8 +125,11 @@ void onStart(ServiceInstance service) async {
         await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
         var firestore = FirebaseFirestore.instance;
         final prefs = await SharedPreferences.getInstance();
-        var name = prefs.getString('user');
-        CollectionReference user = await firestore.collection("Fadhli");
+        CollectionReference user;
+        await prefs.reload();
+        var name = await prefs.getString('user');
+        print(name!);
+        user = await firestore.collection(name);
         user.snapshots().listen((QuerySnapshot snapshot) {
           var androidPlatformChannelSpecifics = const AndroidNotificationDetails('your_channel_id', 'Reminder', importance: Importance.high, priority: Priority.high, ticker: 'ticker');
           var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -142,21 +145,22 @@ void onStart(ServiceInstance service) async {
                 user.doc(doc.id).delete();
               }
             }
+            print("Mengulang data");
           }
         });
-
-        // print("${TimeOfDay.now().hour.toString()} ${TimeOfDay.now().minute.toString()}");
-
-        // print('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
-        // print("Hello");
-        // print(snapshot.docs.length);
-
-        // if you don't using custom notification, uncomment this
-        // service.setForegroundNotificationInfo(
-        //   title: "My App Service",
-        //   content: "Updated at ${DateTime.now()}",
-        // );
       }
+
+      // print("${TimeOfDay.now().hour.toString()} ${TimeOfDay.now().minute.toString()}");
+
+      // print('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
+      // print("Hello");
+      // print(snapshot.docs.length);
+
+      // if you don't using custom notification, uncomment this
+      // service.setForegroundNotificationInfo(
+      //   title: "My App Service",
+      //   content: "Updated at ${DateTime.now()}",
+      // );
     }
 
     /// you can see this log in logcat

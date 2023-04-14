@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/core/background.dart';
 import 'package:todo_today/main.dart';
@@ -15,11 +16,23 @@ class _LoginPageState extends State<LoginPage> {
   double height(BuildContext context) => MediaQuery.of(context).size.height;
   double width(BuildContext context) => MediaQuery.of(context).size.width;
 
+  void checkUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString('user') == null) {
+      print("ini null temanku");
+    } else {
+      await initializeService();
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
+        return MainPage(user: prefs.getString('user')!);
+      }));
+    }
+  }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    checkUser();
   }
 
   @override
@@ -44,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
                       margin: EdgeInsets.only(top: 14),
                       child: Text(
                         "Account",
-                        style: TextStyle(color: PRIMARY_COLOR, fontSize: 16, fontWeight: FontWeight.w500),
+                        style: TextStyle(fontFamily: PRIMARY_FONT, color: PRIMARY_COLOR, fontSize: 16, fontWeight: FontWeight.w500),
                       ),
                     ),
                     ListView.builder(
@@ -55,8 +68,9 @@ class _LoginPageState extends State<LoginPage> {
                               child: TextButton(
                             onPressed: () async {
                               final prefs = await SharedPreferences.getInstance();
-                              await initializeService();
                               String name = person[index];
+                              await initializeService();
+                              prefs.remove('user');
                               prefs.setString('user', name);
                               Navigator.pushReplacement(context, MaterialPageRoute(
                                 builder: (context) {
@@ -64,7 +78,10 @@ class _LoginPageState extends State<LoginPage> {
                                 },
                               ));
                             },
-                            child: Text(person[index]),
+                            child: Text(
+                              person[index],
+                              style: TextStyle(fontFamily: "DeliciousHandrawn", fontSize: 16),
+                            ),
                             style: TextButton.styleFrom(foregroundColor: Colors.black),
                           ));
                         })
