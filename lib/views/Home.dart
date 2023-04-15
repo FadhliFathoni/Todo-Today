@@ -37,21 +37,30 @@ class _HomeState extends State<Home> {
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 int firstIndex = 0;
-                var listData = [];
-                for (int x = 0; x < snapshot.data!.docs.length; x++) {
-                  var data = snapshot.data?.docs[x].data() as Map<String, dynamic>;
-                  if (data['daily'] == false && data['status'] != "Done") {
-                    firstIndex = x;
-                    listData.add(data);
-                  } else if (data['daily'] == true && data['status'] != "Done") {
-                    listData.add(data);
+                List<QueryDocumentSnapshot> listData = [];
+                for (int x = 0; x < snapshot.data!.size; x++) {
+                  var dataId = snapshot.data?.docs[x];
+                  var data = dataId!.data() as Map<String, dynamic>;
+                  if (data['status'] != "Done") {
+                    if (data['daily'] == true) {
+                      listData.insert(0, dataId);
+                    } else if (data['daily'] == false) {
+                      listData.add(dataId);
+                    }
                   }
                 }
                 for (int x = 0; x < listData.length; x++) {
-                  if (listData[x]['daily'] == false) {
+                  print(listData[x]);
+                }
+                for (int x = 0; x < listData.length; x++) {
+                  if (listData[x]['daily'] == false && listData[x]['status'] != "Done") {
                     firstIndex = x;
+                    print(firstIndex);
                     break;
                   }
+                }
+                for (int x = 0; x < listData.length; x++) {
+                  print(listData[x]['daily']);
                 }
                 return Column(
                   children: [
@@ -97,7 +106,7 @@ class _HomeState extends State<Home> {
                                         width: width(context),
                                         child: Container(
                                             width: width(context),
-                                            child: todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", snapshot.data!.docs[index].id, data['daily'])),
+                                            child: todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", listData[index].id, data['daily'])),
                                       ),
                                     ),
                                   ],
@@ -105,7 +114,7 @@ class _HomeState extends State<Home> {
                               );
                             } else {
                               return Container(
-                                  width: width(context), child: todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", snapshot.data!.docs[index].id, data['daily']));
+                                  width: width(context), child: todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", listData[index].id, data['daily']));
                             }
                           } else {
                             if (index == firstIndex) {
@@ -147,14 +156,14 @@ class _HomeState extends State<Home> {
                                         width: width(context),
                                         child: Container(
                                             width: width(context),
-                                            child: todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", snapshot.data!.docs[index].id, data['daily'])),
+                                            child: todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", listData[index].id, data['daily'])),
                                       ),
                                     ),
                                   ],
                                 ),
                               );
                             } else {
-                              return todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", snapshot.data!.docs[index].id, data['daily']);
+                              return todoCard(user, data['title'], data['description'], "${data['hour']}:${data['minute']}", listData[index].id, data['daily']);
                             }
                           }
                         },

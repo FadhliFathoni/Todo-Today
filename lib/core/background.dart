@@ -104,63 +104,35 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  var firestore = FirebaseFirestore.instance;
+  final prefs = await SharedPreferences.getInstance();
+  CollectionReference user;
+  await prefs.reload();
+  var name = await prefs.getString('user');
+  print(name!);
+  user = await firestore.collection(name);
+  var androidPlatformChannelSpecifics = const AndroidNotificationDetails('your_channel_id', 'Reminder', importance: Importance.high, priority: Priority.high, ticker: 'ticker');
+  var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
   Timer.periodic(const Duration(seconds: 5), (timer) async {
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
-        /// OPTIONAL for use custom notification
-        /// the notification id must be equals with AndroidConfiguration when you call configure() method.
-        // flutterLocalNotificationsPlugin.show(
-        //   888,
-        //   'COOL SERVICE',
-        //   'Awesome ${DateTime.now()}',
-        //   const NotificationDetails(
-        //     android: AndroidNotificationDetails(
-        //       'my_foreground',
-        //       'MY FOREGROUND SERVICE',
-        //       icon: '@mipmap/ic_launcher',
-        //       ongoing: true,
-        //     ),
-        //   ),
-        // );
-        await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-        var firestore = FirebaseFirestore.instance;
-        final prefs = await SharedPreferences.getInstance();
-        CollectionReference user;
-        await prefs.reload();
-        var name = await prefs.getString('user');
-        print(name!);
-        user = await firestore.collection(name);
         user.snapshots().listen((QuerySnapshot snapshot) {
-          var androidPlatformChannelSpecifics = const AndroidNotificationDetails('your_channel_id', 'Reminder', importance: Importance.high, priority: Priority.high, ticker: 'ticker');
-          var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
           for (QueryDocumentSnapshot doc in snapshot.docs) {
             Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-            if (data['hour'] == TimeOfDay.now().hour.toString() && data['minute'] == TimeOfDay.now().minute.toString()) {
+            if (data['hour'] == TimeOfDay.now().hour.toString() && data['minute'] == TimeOfDay.now().minute.toString() && data['status'] != "Done") {
               flutterLocalNotificationsPlugin.show(0, data['title'], "It's time!!!, let's do it😀", platformChannelSpecifics, payload: 'item x');
             }
-            if (TimeOfDay.now().hour == 0) {
+            if (TimeOfDay.now().hour == 0 && TimeOfDay.now().minute == 0) {
               if (data['daily'] == true) {
                 user.doc(doc.id).update({"status": "Not done yet"});
               } else {
                 user.doc(doc.id).delete();
               }
             }
-            print("Mengulang data");
           }
         });
       }
-
-      // print("${TimeOfDay.now().hour.toString()} ${TimeOfDay.now().minute.toString()}");
-
-      // print('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
-      // print("Hello");
-      // print(snapshot.docs.length);
-
-      // if you don't using custom notification, uncomment this
-      // service.setForegroundNotificationInfo(
-      //   title: "My App Service",
-      //   content: "Updated at ${DateTime.now()}",
-      // );
     }
 
     /// you can see this log in logcat
