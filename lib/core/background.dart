@@ -104,17 +104,17 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  var firestore = FirebaseFirestore.instance;
-  final prefs = await SharedPreferences.getInstance();
-  CollectionReference user;
-  await prefs.reload();
-  var name = await prefs.getString('user');
-  print(name!);
-  user = await firestore.collection(name);
-  var androidPlatformChannelSpecifics = const AndroidNotificationDetails('your_channel_id', 'Reminder', importance: Importance.high, priority: Priority.high, ticker: 'ticker');
-  var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
   Timer.periodic(const Duration(seconds: 5), (timer) async {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    var firestore = FirebaseFirestore.instance;
+    final prefs = await SharedPreferences.getInstance();
+    CollectionReference user;
+    await prefs.reload();
+    var name = await prefs.getString('user');
+    print(name!);
+    user = await firestore.collection(name);
+    var androidPlatformChannelSpecifics = const AndroidNotificationDetails('your_channel_id', 'Reminder', importance: Importance.high, priority: Priority.high, ticker: 'ticker');
+    var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
         user.snapshots().listen((QuerySnapshot snapshot) {

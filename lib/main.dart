@@ -85,6 +85,7 @@ class _MainPageState extends State<MainPage> {
         centerTitle: true,
         title: GestureDetector(
           onTap: () async {
+            FlutterBackgroundService().invoke("stopService");
             final prefs = await SharedPreferences.getInstance();
             prefs.clear();
             Navigator.pushReplacement(context, MaterialPageRoute(
@@ -92,7 +93,6 @@ class _MainPageState extends State<MainPage> {
                 return LoginPage();
               },
             ));
-            // FlutterBackgroundService().invoke("stopService");
           },
           child: Text(
             "TODO TODAY",
