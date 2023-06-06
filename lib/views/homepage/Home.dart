@@ -2,6 +2,8 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/views/homepage/CircularButton.dart';
 import 'package:todo_today/views/homepage/todoCard.dart';
@@ -47,6 +49,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference user = firestore.collection(widget.user);
+
     return Scaffold(
       body: Container(
           height: height(context),
@@ -291,14 +294,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           color: PRIMARY_COLOR,
                           icon: Icons.add,
                           onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text("Add Pressed"),
-                                );
-                              },
-                            );
+                            dialogTambah(context, user);
                           },
                         ),
                       ),
@@ -324,6 +320,165 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
               ),
             ],
           )),
+    );
+  }
+
+  Future<dynamic> dialogTambah(
+      BuildContext context, CollectionReference<Object?> user) {
+    TimeOfDay time = TimeOfDay.now();
+    double width(BuildContext context) => MediaQuery.of(context).size.width;
+    double height(BuildContext context) => MediaQuery.of(context).size.height;
+    TextEditingController title = TextEditingController();
+    TextEditingController description = TextEditingController();
+    int currentIndex = 0;
+    bool isDaily = false;
+    late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              content: Container(
+                width: width(context) * 0.7,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                        child: Text(
+                      "Create",
+                      style: TextStyle(
+                          fontFamily: PRIMARY_FONT,
+                          color: PRIMARY_COLOR,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16),
+                    )),
+                    Container(
+                      margin: EdgeInsets.only(top: 20),
+                      height: 55,
+                      child: TextField(
+                        controller: title,
+                        maxLength: 30,
+                        cursorColor: PRIMARY_COLOR,
+                        style: TextStyle(fontFamily: PRIMARY_FONT),
+                        decoration: InputDecoration(
+                          counterStyle: TextStyle(fontFamily: PRIMARY_FONT),
+                          hintStyle: TextStyle(fontFamily: PRIMARY_FONT),
+                          contentPadding: EdgeInsets.symmetric(vertical: 0),
+                          hintText: "Title",
+                          enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey)),
+                          focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: PRIMARY_COLOR)),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      height: 55,
+                      child: TextField(
+                        controller: description,
+                        maxLength: 50,
+                        cursorColor: PRIMARY_COLOR,
+                        style: TextStyle(fontFamily: PRIMARY_FONT),
+                        decoration: InputDecoration(
+                          counterStyle: TextStyle(fontFamily: PRIMARY_FONT),
+                          hintStyle: TextStyle(fontFamily: PRIMARY_FONT),
+                          contentPadding: EdgeInsets.symmetric(vertical: 0),
+                          hintText: "Description",
+                          enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey)),
+                          focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: PRIMARY_COLOR)),
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      child: Row(
+                        children: [
+                          Container(
+                            child: Text(
+                              "${time.hour}",
+                              style: TextStyle(fontFamily: PRIMARY_FONT),
+                            ),
+                            decoration: BoxDecoration(
+                                border: Border(
+                                    bottom: BorderSide(color: Colors.grey))),
+                          ),
+                          Text(":"),
+                          Container(
+                            child: Text(
+                              "${time.minute}",
+                              style: TextStyle(fontFamily: PRIMARY_FONT),
+                            ),
+                            decoration: BoxDecoration(
+                                border: Border(
+                                    bottom: BorderSide(color: Colors.grey))),
+                          )
+                        ],
+                      ),
+                      onTap: () async {
+                        final TimeOfDay? picked = await showTimePicker(
+                            context: context, initialTime: time);
+                        if (picked != null) {
+                          setState(() {
+                            time = picked;
+                          });
+                        }
+                      },
+                    ),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: isDaily,
+                          onChanged: (value) {
+                            setState(() {
+                              isDaily = !isDaily;
+                            });
+                          },
+                        ),
+                        Text(
+                          "Everyday",
+                          style: TextStyle(fontFamily: PRIMARY_FONT),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+              actions: [
+                Container(
+                    margin: EdgeInsets.only(right: 14),
+                    height: 28,
+                    width: 81,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await user.add({
+                          "title": title.text,
+                          "description": description.text,
+                          "date": DateTime.now().toString(),
+                          "hour": "${time.hour}",
+                          "minute": "${time.minute}",
+                          "status": "Not done yet",
+                          "daily": isDaily
+                        });
+                        Navigator.pop(context);
+                        FlutterBackgroundService().invoke("setAsBackground");
+                      },
+                      child: Text(
+                        "Create",
+                        style: TextStyle(fontFamily: PRIMARY_FONT),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: PRIMARY_COLOR),
+                    )),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
