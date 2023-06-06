@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:todo_today/main.dart';
+import 'package:todo_today/views/buy/buyPage.dart';
 import 'package:todo_today/views/homepage/CircularButton.dart';
 import 'package:todo_today/views/homepage/todoCard.dart';
 
@@ -270,14 +271,11 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           color: PRIMARY_COLOR,
                           icon: Icons.attach_money,
                           onTap: () {
-                            showDialog(
-                              context: context,
+                            Navigator.push(context, MaterialPageRoute(
                               builder: (context) {
-                                return AlertDialog(
-                                  title: Text("Money PRESSED"),
-                                );
+                                return buyPage();
                               },
-                            );
+                            ));
                           },
                         ),
                       ),
