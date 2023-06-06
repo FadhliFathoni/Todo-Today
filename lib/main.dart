@@ -1,10 +1,9 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, sized_box_for_whitespace
+// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, sized_box_for_whitespace, must_be_immutable
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:todo_today/core/background.dart';
 import 'package:todo_today/views/history/History.dart';
 import 'package:todo_today/views/homepage/Home.dart';
 import 'package:todo_today/views/loginpage/LoginPage.dart';
@@ -79,12 +78,11 @@ class _MainPageState extends State<MainPage> {
           user: widget.user,
         );
     }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference user = firestore.collection(widget.user);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -278,5 +276,3 @@ class _MainPageState extends State<MainPage> {
     );
   }
 }
-
-

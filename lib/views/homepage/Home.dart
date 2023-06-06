@@ -1,8 +1,7 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, must_be_immutable
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/views/homepage/CircularButton.dart';
 import 'package:todo_today/views/homepage/todoCard.dart';

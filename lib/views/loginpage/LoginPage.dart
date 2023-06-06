@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/core/background.dart';
 import 'package:todo_today/main.dart';
