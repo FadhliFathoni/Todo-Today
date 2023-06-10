@@ -12,7 +12,7 @@ import 'package:todo_today/Component/CircularButton.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/views/homepage/Home.dart';
 
-class dialog{
+class dialog {
   Positioned dialogAdd(
       BuildContext context,
       String? name,
@@ -26,7 +26,7 @@ class dialog{
       TextEditingController link,
       bool isMonthly) {
     return Positioned(
-      bottom: 30,
+      bottom: 60,
       right: 30,
       child: CircularButton(
         color: PRIMARY_COLOR,
@@ -230,5 +230,4 @@ class dialog{
       ),
     );
   }
-
 }

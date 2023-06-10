@@ -1,15 +1,19 @@
+// ignore_for_file: must_be_immutable
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
+import 'package:todo_today/Component/Text/MoneyText.dart';
 import 'package:todo_today/Component/Text/ParagraphText.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/Component/FirebasePicture.dart';
 import 'package:todo_today/Component/OkButton.dart';
+import 'package:todo_today/views/buy/MyBottomBar.dart';
 import 'package:todo_today/views/buy/MyBottomSheet.dart';
-import 'package:todo_today/views/buy/dialogAdd.dart';
+import 'package:todo_today/views/buy/Dialog.dart';
 
 class buyPage extends StatefulWidget {
   String user;
@@ -26,7 +30,6 @@ class _buyPageState extends State<buyPage> {
     double width(BuildContext context) => MediaQuery.of(context).size.width;
 
     TextEditingController title = TextEditingController();
-    TextEditingController description = TextEditingController();
     TextEditingController price = TextEditingController();
     TextEditingController link = TextEditingController();
 
@@ -43,14 +46,7 @@ class _buyPageState extends State<buyPage> {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference user = firestore.collection(name + " Spend");
 
-    String MoneyText(value) {
-      final rupiahFormatter = NumberFormat.currency(
-        locale: 'id_ID',
-        symbol: 'Rp ',
-        decimalDigits: 0,
-      );
-      return rupiahFormatter.format(value);
-    }
+    
 
     return Scaffold(
       appBar: AppBar(
@@ -170,9 +166,12 @@ class _buyPageState extends State<buyPage> {
             ),
             dialog().dialogAdd(context, name, pickedFile, fileName, user,
                 uploadTask, title, price, isOnline, link, isMonthly),
+            MyBottomBar(user: user)
           ],
         ),
       ),
     );
   }
 }
+
+
