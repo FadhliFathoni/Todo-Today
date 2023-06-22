@@ -10,7 +10,7 @@ import 'package:todo_today/Component/Text/ParagraphText.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/Component/CircularButton.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
-import 'package:todo_today/views/homepage/Home.dart';
+import 'package:todo_today/views/Todo/homepage/Home.dart';
 
 class dialog {
   Positioned dialogAdd(
@@ -132,6 +132,7 @@ class dialog {
                               controller: price,
                               maxLength: 50,
                               hintText: "Price",
+                              textInputType: TextInputType.number,
                               onChanged: (value) {},
                             ),
                             Visibility(
@@ -151,6 +152,11 @@ class dialog {
                                     setstate(
                                       () {
                                         isMonthly = !isMonthly;
+                                        showDatePicker(
+                                            context: context,
+                                            initialDate: DateTime.now(),
+                                            firstDate: DateTime(2023),
+                                            lastDate: DateTime(2025));
                                       },
                                     );
                                   },

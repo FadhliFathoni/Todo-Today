@@ -42,7 +42,7 @@ class MyBottomSheet {
                       color: Colors.grey,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    height: 10,
+                    height: 8,
                     width: 40,
                   ),
                 )),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:todo_today/main.dart';
 
-class Heading1 extends StatelessWidget {
-  Heading1({
+class Heading3 extends StatelessWidget {
+  Heading3({
     super.key,
     required this.text,
     this.color,
@@ -18,7 +18,7 @@ class Heading1 extends StatelessWidget {
       style: TextStyle(
           fontFamily: PRIMARY_FONT,
           color: color,
-          fontSize: 20,
+          fontSize: 16,
           fontWeight: FontWeight.w500),
     );
   }

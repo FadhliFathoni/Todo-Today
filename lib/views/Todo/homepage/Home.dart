@@ -6,10 +6,11 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/Component/Text/ParagraphText.dart';
 import 'package:todo_today/main.dart';
-import 'package:todo_today/views/buy/buyPage.dart';
+import 'package:todo_today/mainMoney.dart';
+import 'package:todo_today/views/Money/buy/BuyPage.dart';
 import 'package:todo_today/Component/CircularButton.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
-import 'package:todo_today/views/homepage/todoCard.dart';
+import 'package:todo_today/views/Todo/homepage/todoCard.dart';
 
 class Home extends StatefulWidget {
   String user;
@@ -291,7 +292,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                             context,
                             MaterialPageRoute(
                               builder: (context) {
-                                return buyPage(
+                                return MainMoney(
                                   user: widget.user,
                                 );
                               },

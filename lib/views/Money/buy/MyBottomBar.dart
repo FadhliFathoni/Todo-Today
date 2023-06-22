@@ -29,8 +29,12 @@ class MyBottomBar extends StatelessWidget {
               stream: user.snapshots(),
               builder: (context, snapshot) {
                 int total = 0;
-                for (int x = 0; x < snapshot.data!.size; x++) {
-                  total += snapshot.data!.docs[x]['price'] as int;
+                try {
+                  for (int x = 0; x < snapshot.data!.size; x++) {
+                    total += snapshot.data!.docs[x]['price'] as int;
+                  }
+                } catch (e) {
+                  total = 0;
                 }
                 if (snapshot.hasData) {
                   return Heading1(

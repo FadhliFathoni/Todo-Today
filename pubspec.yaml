@@ -52,6 +52,7 @@ dependencies:
   intl: ^0.18.1
   expandable_bottom_sheet: ^1.1.1+1
   url_launcher: ^6.1.11
+  date_format: ^2.0.7
   
 
 dev_dependencies:

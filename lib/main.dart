@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/views/history/History.dart';
-import 'package:todo_today/views/homepage/Home.dart';
+import 'package:todo_today/views/Todo/homepage/Home.dart';
 import 'package:todo_today/views/loginpage/LoginPage.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -12,10 +12,11 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 Color PRIMARY_COLOR = Color.fromARGB(255, 164, 83, 56);
 Color BG_COLOR = Color.fromARGB(255, 193, 200, 192);
-
 String PRIMARY_FONT = "DeliciousHandrawn";
-
 FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
+
+double height(BuildContext context) => MediaQuery.of(context).size.height;
+double width(BuildContext context) => MediaQuery.of(context).size.width;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,9 +99,9 @@ class _MainPageState extends State<MainPage> {
             ));
           },
           child: Text(
-            "TODO TODAY",
+            "Todo Today",
             style: TextStyle(
-                color: Colors.black,
+                color: PRIMARY_COLOR,
                 fontFamily: PRIMARY_FONT,
                 fontWeight: FontWeight.w600),
           ),
@@ -119,11 +120,8 @@ class _MainPageState extends State<MainPage> {
           items: [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
             BottomNavigationBarItem(
-                icon: Icon(Icons.history), label: "History"),
+                icon: Icon(Icons.history), label: "Puff History"),
           ]),
     );
   }
-
-  
-  }
-
+}
