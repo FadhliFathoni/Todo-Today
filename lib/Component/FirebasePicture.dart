@@ -21,7 +21,7 @@ class FirebasePicture extends StatelessWidget {
       final url = await ref.getDownloadURL();
       return url;
     } catch (e) {
-      throw "No image";
+      return image;
     }
   }
 
@@ -31,14 +31,18 @@ class FirebasePicture extends StatelessWidget {
       future: getImage(listData[index]['picture']),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          return Image.network(
-            snapshot.data!,
-            fit: boxFit,
-          );
+          if (listData[index]['picture'] != "assets/icons/camera.png") {
+            return Image.network(
+              snapshot.data!,
+              fit: boxFit,
+            );
+          } else {
+            return Image.asset(listData[index]['picture']);
+          }
         } else if (snapshot.hasError) {
           return Text("There's an error");
         } else {
-          return CircularProgressIndicator();
+          return Center(child: CircularProgressIndicator());
         }
       },
     );

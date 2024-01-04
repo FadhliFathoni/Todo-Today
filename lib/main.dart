@@ -120,7 +120,7 @@ class _MainPageState extends State<MainPage> {
           items: [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
             BottomNavigationBarItem(
-                icon: Icon(Icons.history), label: "Puff History"),
+                icon: Icon(Icons.history), label: "History"),
           ]),
     );
   }

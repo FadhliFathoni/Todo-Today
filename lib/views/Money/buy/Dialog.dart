@@ -26,7 +26,7 @@ class dialog {
       TextEditingController link,
       bool isMonthly) {
     return Positioned(
-      bottom: 60,
+      bottom: 30,
       right: 30,
       child: CircularButton(
         color: PRIMARY_COLOR,
@@ -48,16 +48,20 @@ class dialog {
                   }
 
                   Future uploadFile() async {
-                    final path = '$name/${pickedFile!.name}';
-                    final file = File(pickedFile!.path!);
+                    if (pickedFile != null) {
+                      final path = '$name/${pickedFile!.name}';
+                      final file = File(pickedFile!.path!);
 
-                    final ref = FirebaseStorage.instance.ref().child(path);
-                    uploadTask = ref.putFile(file);
+                      final ref = FirebaseStorage.instance.ref().child(path);
+                      uploadTask = ref.putFile(file);
 
-                    final snapshot = await uploadTask!.whenComplete(() {});
+                      final snapshot = await uploadTask!.whenComplete(() {});
 
-                    final urlDownload = await snapshot.ref.getDownloadURL();
-                    print("Download link ${urlDownload}");
+                      final urlDownload = await snapshot.ref.getDownloadURL();
+                      print("Download link ${urlDownload}");
+                    } else {
+                      return;
+                    }
                   }
 
                   return AlertDialog(
@@ -152,11 +156,6 @@ class dialog {
                                     setstate(
                                       () {
                                         isMonthly = !isMonthly;
-                                        showDatePicker(
-                                            context: context,
-                                            initialDate: DateTime.now(),
-                                            firstDate: DateTime(2023),
-                                            lastDate: DateTime(2025));
                                       },
                                     );
                                   },
@@ -212,7 +211,9 @@ class dialog {
                                 "monthly": isMonthly,
                                 "online": isOnline,
                                 "link": link.text,
-                                "picture": pickedFile!.name
+                                "picture": (pickedFile != null)
+                                    ? pickedFile!.name
+                                    : "assets/icons/camera.png"
                               },
                             );
                             Navigator.pop(context);

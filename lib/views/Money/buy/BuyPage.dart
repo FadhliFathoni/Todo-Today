@@ -5,9 +5,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
+import 'package:todo_today/Component/Text/Heading3.dart';
+import 'package:todo_today/Component/Text/MoneyText.dart';
+import 'package:todo_today/Component/Text/ParagraphText.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/views/Money/buy/BuyCard.dart';
-import 'package:todo_today/views/Money/buy/MyBottomBar.dart';
 import 'package:todo_today/views/Money/buy/Dialog.dart';
 
 class BuyPage extends StatefulWidget {
@@ -64,11 +66,13 @@ class _BuyPageState extends State<BuyPage> {
                 if (snapshot.hasData) {
                   var listData = [];
                   var firstIndex = 0;
+                  num total = 0;
                   for (int x = 0; x < snapshot.data!.size; x++) {
                     var dataId =
                         snapshot.data?.docs[x].data() as Map<String, dynamic>;
                     if (dataId['monthly'] == true) {
                       listData.insert(0, dataId);
+                      total += dataId['price'];
                     } else {
                       listData.add(dataId);
                     }
@@ -79,76 +83,86 @@ class _BuyPageState extends State<BuyPage> {
                       break;
                     }
                   }
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 50),
-                    child: ListView.builder(
-                      itemCount: listData.length,
-                      itemBuilder: (context, x) {
-                        if (listData[x]['monthly'] == true) {
-                          if (x == 0) {
-                            return Column(
-                              children: [
-                                Container(
-                                    margin: EdgeInsets.only(top: 10),
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Heading1(
+                  return ListView.builder(
+                    itemCount: listData.length,
+                    itemBuilder: (context, x) {
+                      if (listData[x]['monthly'] == true) {
+                        if (x == 0) {
+                          return Column(
+                            children: [
+                              Container(
+                                width: 150,
+                                margin: EdgeInsets.only(top: 10),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Heading1(
                                       text: "Monthly",
                                       color: PRIMARY_COLOR,
-                                    )),
-                                BuyCard(listData: listData, index: x)
-                              ],
-                            );
-                          } else {
-                            return BuyCard(listData: listData, index: x);
-                          }
-                        } else {
-                          if (x == firstIndex) {
-                            return Column(
-                              children: [
-                                Container(
-                                  margin: EdgeInsets.only(top: 10),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Heading1(
-                                    text: "Not Monthly",
-                                    color: PRIMARY_COLOR,
-                                  ),
+                                    ),
+                                    ParagraphText(
+                                      text: MoneyText(total),
+                                      color: PRIMARY_COLOR,
+                                    )
+                                  ],
                                 ),
-                                BuyCard(listData: listData, index: x)
-                              ],
-                            );
-                          } else {
-                            return BuyCard(listData: listData, index: x);
-                          }
+                              ),
+                              BuyCard(listData: listData, index: x)
+                            ],
+                          );
+                        } else {
+                          return BuyCard(listData: listData, index: x);
                         }
-                      },
-                    ),
+                      } else {
+                        if (x == firstIndex) {
+                          return Column(
+                            children: [
+                              Container(
+                                width: 150,
+                                alignment: Alignment.center,
+                                margin: EdgeInsets.only(top: 10),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Heading1(
+                                  text: "Not Monthly",
+                                  color: PRIMARY_COLOR,
+                                ),
+                              ),
+                              BuyCard(listData: listData, index: x)
+                            ],
+                          );
+                        } else {
+                          return BuyCard(listData: listData, index: x);
+                        }
+                      }
+                    },
                   );
                 } else if (snapshot.hasError) {
                   return Center(
                     child: Text("There's an error"),
                   );
                 } else {
-                  return Center(child: CircularProgressIndicator());
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
                 }
               },
             ),
             dialog().dialogAdd(context, name, pickedFile, fileName, user,
                 uploadTask, title, price, isOnline, link, isMonthly),
-            MyBottomBar(user: user)
           ],
         ),
       ),

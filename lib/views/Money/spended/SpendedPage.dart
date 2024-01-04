@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:todo_today/Component/OkButton.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/Component/Text/Heading3.dart';
+import 'package:todo_today/Component/Text/MoneyText.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/views/Money/spended/CardSpended.dart';
 import 'package:todo_today/views/Money/spended/SpendedFAB.dart';
@@ -83,9 +84,65 @@ class _SpendedPageState extends State<SpendedPage> {
                             color: PRIMARY_COLOR,
                           ),
                         ),
-                        Heading1(
-                          text: formatDateTime(date),
-                          color: PRIMARY_COLOR,
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () async {
+                                final DateTime? picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: date,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (picked == null) {
+                                  return;
+                                } else if (picked.year >= DateTime.now().year &&
+                                    picked.month >= DateTime.now().month &&
+                                    picked.day > DateTime.now().day) {
+                                  return;
+                                } else {
+                                  setState(() {
+                                    date = picked;
+                                  });
+                                }
+                              },
+                              child: Heading1(
+                                text: formatDateTime(date),
+                                color: PRIMARY_COLOR,
+                              ),
+                            ),
+                            StreamBuilder(
+                              stream: user.snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  num total = 0;
+                                  for (int x = 0;
+                                      x < snapshot.data!.size;
+                                      x++) {
+                                    Timestamp timestamp =
+                                        snapshot.data!.docs[x]['date'];
+                                    DateTime dateTime = timestamp.toDate();
+
+                                    if (formatDateTime(dateTime).toString() ==
+                                        formatDateTime(date).toString()) {
+                                      total += snapshot.data!.docs[x]['price'];
+                                    }
+                                  }
+                                  return Heading3(
+                                    text: "-" + MoneyText(total),
+                                    color: (total == 0)
+                                        ? Colors.green
+                                        : Colors.red,
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return Text("There's an error");
+                                } else {
+                                  return CircularProgressIndicator();
+                                }
+                              },
+                            )
+                          ],
                         ),
                         IconButton(
                           onPressed: () {
@@ -194,13 +251,16 @@ class _SpendedPageState extends State<SpendedPage> {
 
   void incrementDate(List<dynamic> listData,
       List<QueryDocumentSnapshot<Object?>> listDataNow) {
-    if (date.day >= DateTime.now().day) {
+    if (date.year == DateTime.now().year &&
+        date.month == DateTime.now().month &&
+        date.day >= DateTime.now().day) {
       return;
     } else {
       setState(() {
         listData.clear();
         listDataNow.clear();
         date = date.subtract(Duration(days: -1));
+        dateSelected = date;
       });
     }
   }

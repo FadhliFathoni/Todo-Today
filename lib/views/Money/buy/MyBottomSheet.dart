@@ -2,6 +2,7 @@ import 'package:expandable_bottom_sheet/expandable_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_today/Component/FirebasePicture.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
+import 'package:todo_today/Component/Text/Heading3.dart';
 import 'package:todo_today/Component/Text/ParagraphText.dart';
 import 'package:todo_today/main.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,34 +24,37 @@ class MyBottomSheet {
         return GestureDetector(
           onTap: () => Navigator.pop(context),
           child: ExpandableBottomSheet(
+            enableToggle: true,
             background: Container(
               color: Colors.transparent,
             ),
-            persistentContentHeight: height(context) / 2,
+            persistentContentHeight: height(context) / 2.5,
             persistentHeader: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
-                  ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
                 ),
-                height: 20,
-                child: Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    height: 8,
-                    width: 40,
+              ),
+              height: 20,
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                )),
+                  height: 8,
+                  width: 40,
+                ),
+              ),
+            ),
             expandableContent: Container(
-              height: height(context) / 1.5,
+              height: height(context) / 2,
               width: width(context),
               color: Colors.white,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
                     onTap: () {
@@ -83,9 +87,9 @@ class MyBottomSheet {
                     ),
                   ),
                   Heading1(text: listData[x]['title'], color: PRIMARY_COLOR),
-                  ParagraphText(
+                  Heading3(
                     text: MoneyText(listData[x]['price']),
-                    color: PRIMARY_COLOR.withOpacity(0.7),
+                    color: PRIMARY_COLOR,
                   ),
                   (listData[x]['online'])
                       ? GestureDetector(
@@ -100,6 +104,7 @@ class MyBottomSheet {
                           child: Container(
                             height: 30,
                             width: 80,
+                            margin: EdgeInsets.only(bottom: 20),
                             padding: EdgeInsets.all(5),
                             decoration: BoxDecoration(
                               color: PRIMARY_COLOR,

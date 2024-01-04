@@ -32,9 +32,11 @@ class CardSpended extends StatelessWidget {
             color: PRIMARY_COLOR,
           ),
           Heading3(
-            text: MoneyText(
-              price,
-            ),
+            text: "-" +
+                MoneyText(
+                  price,
+                ),
+            color: Colors.red,
           ),
         ],
       ),
