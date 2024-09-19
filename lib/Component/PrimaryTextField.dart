@@ -3,7 +3,8 @@ import 'package:todo_today/main.dart';
 
 class PrimaryTextField extends StatelessWidget {
   final TextEditingController controller;
-  final int maxLength;
+  int? maxLength;
+  int? maxLine;
   final String hintText;
   TextInputType? textInputType = TextInputType.text;
   final void Function(String) onChanged;
@@ -11,7 +12,8 @@ class PrimaryTextField extends StatelessWidget {
   PrimaryTextField(
       {super.key,
       required this.controller,
-      required this.maxLength,
+      this.maxLength,
+      this.maxLine,
       required this.hintText,
       required this.onChanged,
       this.textInputType});
@@ -25,6 +27,7 @@ class PrimaryTextField extends StatelessWidget {
         onChanged: onChanged,
         controller: controller,
         maxLength: maxLength,
+        maxLines: maxLine,
         cursorColor: PRIMARY_COLOR,
         style: TextStyle(fontFamily: PRIMARY_FONT),
         decoration: InputDecoration(

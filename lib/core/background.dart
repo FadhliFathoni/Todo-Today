@@ -27,6 +27,16 @@ Future<void> initializeService() async {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  // Initialize notifications for both Android and iOS
+  if (Platform.isIOS || Platform.isAndroid) {
+    await flutterLocalNotificationsPlugin.initialize(
+      const InitializationSettings(
+        iOS: DarwinInitializationSettings(),
+        android: AndroidInitializationSettings('ic_bg_service_small'),
+      ),
+    );
+  }
+
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
@@ -45,6 +55,7 @@ Future<void> initializeService() async {
       initialNotificationTitle: 'AWESOME SERVICE',
       initialNotificationContent: 'Initializing',
       foregroundServiceNotificationId: 888,
+      foregroundServiceTypes: [AndroidForegroundType.location, AndroidForegroundType.specialUse],
     ),
     iosConfiguration: IosConfiguration(
       // auto start service
@@ -59,9 +70,6 @@ Future<void> initializeService() async {
   );
   service.startService();
 }
-
-// to ensure this is executed
-// run app from xcode, then from xcode menu, select Simulate Background Fetch
 
 @pragma('vm:entry-point')
 Future<bool> onIosBackground(ServiceInstance service) async {
@@ -79,16 +87,11 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
-  // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
-
-  // For flutter prior to version 3.0.0
-  // We have to register the plugin manually
 
   SharedPreferences preferences = await SharedPreferences.getInstance();
   await preferences.setString("hello", "world");
 
-  /// OPTIONAL when use custom notification
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -99,7 +102,6 @@ void onStart(ServiceInstance service) async {
 
     service.on('setAsBackground').listen((event) {
       service.setAsBackgroundService();
-      initializeService();
     });
   }
 
@@ -107,34 +109,41 @@ void onStart(ServiceInstance service) async {
     service.stopSelf();
   });
 
-  // bring to foreground
-  Timer.periodic(const Duration(seconds: 5), (timer) async {
+  // Combine Firebase and Firestore logic with the periodic timer
+  Timer.periodic(const Duration(seconds: 1), (timer) async {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
     var firestore = FirebaseFirestore.instance;
-    final prefs = await SharedPreferences.getInstance();
-    CollectionReference user;
-    await prefs.reload();
-    var name = await prefs.getString('user');
-    // print(name!);
-    user = await firestore.collection(name!);
-    var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
-        'your_channel_id', 'Reminder',
-        importance: Importance.high, priority: Priority.high, ticker: 'ticker');
-    var platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
+        // Firebase and Firestore interaction
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.reload();
+        var name = prefs.getString('user') ?? 'default_user';
+        CollectionReference user = firestore.collection(name);
+
+        // Listen to Firestore updates and trigger notifications
         user.snapshots().listen((QuerySnapshot snapshot) {
           for (QueryDocumentSnapshot doc in snapshot.docs) {
             Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
             if (data['hour'] == TimeOfDay.now().hour.toString() &&
                 data['minute'] == TimeOfDay.now().minute.toString() &&
                 data['status'] != "Done") {
+              var androidPlatformChannelSpecifics =
+                  const AndroidNotificationDetails(
+                'my_foreground',
+                'Reminder',
+                importance: Importance.high,
+                priority: Priority.high,
+              );
+              var platformChannelSpecifics =
+                  NotificationDetails(android: androidPlatformChannelSpecifics);
               flutterLocalNotificationsPlugin.show(0, data['title'],
-                  "It's time!!!, let's do it😀", platformChannelSpecifics,
-                  payload: 'item x');
+                  "It's time!!!, let's do it😀", platformChannelSpecifics);
             }
+
+            // Reset or delete task at midnight
             if (TimeOfDay.now().hour == 0 && TimeOfDay.now().minute == 0) {
               if (data['daily'] == true) {
                 user.doc(doc.id).update({"status": "Not done yet"});
@@ -144,20 +153,31 @@ void onStart(ServiceInstance service) async {
             }
           }
         });
+
+        // Optional notification updating every second
+        flutterLocalNotificationsPlugin.show(
+          888,
+          'COOL SERVICE',
+          'Awesome ${DateTime.now()}',
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'my_foreground',
+              'MY FOREGROUND SERVICE',
+              icon: 'ic_bg_service_small',
+              ongoing: true,
+            ),
+          ),
+        );
       }
     }
 
-    /// you can see this log in logcat
-
-    // test using external plugin
+    // Device information logging
     final deviceInfo = DeviceInfoPlugin();
     String? device;
     if (Platform.isAndroid) {
       final androidInfo = await deviceInfo.androidInfo;
       device = androidInfo.model;
-    }
-
-    if (Platform.isIOS) {
+    } else if (Platform.isIOS) {
       final iosInfo = await deviceInfo.iosInfo;
       device = iosInfo.model;
     }

@@ -20,7 +20,7 @@ class _LoginPageState extends State<LoginPage> {
     if (prefs.getString('user') == null) {
       print("ini null temanku");
     } else {
-      await initializeService();
+      // await initializeService();
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
         return MainPage(user: prefs.getString('user')!);
       }));
@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: () async {
                               final prefs = await SharedPreferences.getInstance();
                               String name = person[index];
-                              await initializeService();
+                              // await initializeService();
                               prefs.remove('user');
                               prefs.setString('user', name);
                               Navigator.pushReplacement(context, MaterialPageRoute(

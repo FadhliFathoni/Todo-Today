@@ -4,16 +4,13 @@ import 'package:flutter/material.dart';
 class FirebasePicture extends StatelessWidget {
   FirebasePicture({
     super.key,
-    required this.listData,
-    required this.index,
+    required this.image,
     required this.boxFit,
   });
-
-  final List listData;
-  final int index;
+  final String image;
   final BoxFit boxFit;
 
-  String imageUrl = 'gs://todo-today-74b74.appspot.com/Fadhli/';
+  String imageUrl = 'gs://todo-today-74b74.appspot.com/wishlist/';
 
   Future<String> getImage(String image) async {
     try {
@@ -28,21 +25,15 @@ class FirebasePicture extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: getImage(listData[index]['picture']),
+      future: getImage(image),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          if (listData[index]['picture'] != "assets/icons/camera.png") {
-            return Image.network(
-              snapshot.data!,
-              fit: boxFit,
-            );
-          } else {
-            return Image.asset(listData[index]['picture']);
-          }
-        } else if (snapshot.hasError) {
-          return Text("There's an error");
+          return Image.network(
+            snapshot.data!,
+            fit: boxFit,
+          );
         } else {
-          return Center(child: CircularProgressIndicator());
+          return Container();
         }
       },
     );

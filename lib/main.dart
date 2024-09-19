@@ -2,7 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_today/core/background.dart';
 import 'package:todo_today/views/history/History.dart';
 import 'package:todo_today/views/Todo/homepage/Home.dart';
 import 'package:todo_today/views/loginpage/LoginPage.dart';
@@ -13,14 +15,17 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 Color PRIMARY_COLOR = Color.fromARGB(255, 164, 83, 56);
 Color BG_COLOR = Color.fromARGB(255, 193, 200, 192);
 String PRIMARY_FONT = "DeliciousHandrawn";
-FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
+// FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
 
 double height(BuildContext context) => MediaQuery.of(context).size.height;
 double width(BuildContext context) => MediaQuery.of(context).size.width;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  // await initializeService();
+  // flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  await initializeDateFormatting(
+      'id', null); // Initialize for Indonesian locale
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(MyApp());
 }

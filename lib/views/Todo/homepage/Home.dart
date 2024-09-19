@@ -7,6 +7,7 @@ import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/Component/Text/ParagraphText.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/mainMoney.dart';
+import 'package:todo_today/mainWishList.dart';
 import 'package:todo_today/views/Money/buy/BuyPage.dart';
 import 'package:todo_today/Component/CircularButton.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
@@ -286,15 +287,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                       alignment: Alignment.center,
                       child: CircularButton(
                         color: PRIMARY_COLOR,
-                        icon: Icons.attach_money,
+                        icon: Icons.favorite_border,
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) {
-                                return MainMoney(
-                                  user: widget.user,
-                                );
+                                return Mainwishlist();
                               },
                             ),
                           );
