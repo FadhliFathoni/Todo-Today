@@ -537,7 +537,10 @@ class _WishListDoneState extends State<WishListDone> {
     CollectionReference wishlist = firestore.collection("wishlist");
 
     return StreamBuilder(
-      stream: wishlist.where("status", isEqualTo: "syudah").snapshots(),
+      stream: wishlist
+          .where("status", isEqualTo: "syudah")
+          .orderBy("time", descending: true)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
@@ -577,58 +580,6 @@ class _WishListDoneState extends State<WishListDone> {
             var time = data["time"] as Timestamp?;
             var timeString = convertTimestampToIndonesianDate(time);
             return GestureDetector(
-              // onLongPress: () {
-              //   showDialog(
-              //       context: context,
-              //       builder: (context) {
-              //         return AlertDialog(
-              //             backgroundColor: Colors.white,
-              //             shape: RoundedRectangleBorder(
-              //               borderRadius: BorderRadius.circular(20),
-              //             ),
-              //             title: Text(
-              //               "Kepencet?",
-              //               style: TextStyle(
-              //                   color: PRIMARY_COLOR, fontFamily: PRIMARY_FONT),
-              //             ),
-              //             actions: [
-              //               ElevatedButton(
-              //                 onPressed: () {
-              //                   Navigator.pop(context);
-              //                 },
-              //                 child: Text(
-              //                   "Tidak",
-              //                   style: TextStyle(
-              //                     fontFamily: PRIMARY_FONT,
-              //                     color: PRIMARY_COLOR,
-              //                   ),
-              //                 ),
-              //                 style: ElevatedButton.styleFrom(
-              //                   backgroundColor: Colors.white,
-              //                 ),
-              //               ),
-              //               ElevatedButton(
-              //                 onPressed: () async {
-              //                   await reference.update({
-              //                     "status": "belum",
-              //                     "time": "",
-              //                   });
-              //                   Navigator.pop(context);
-              //                 },
-              //                 child: Text(
-              //                   "Iya",
-              //                   style: TextStyle(
-              //                     fontFamily: PRIMARY_FONT,
-              //                     color: Colors.white,
-              //                   ),
-              //                 ),
-              //                 style: ElevatedButton.styleFrom(
-              //                   backgroundColor: PRIMARY_COLOR,
-              //                 ),
-              //               )
-              //             ]);
-              //       });
-              // },
               onTap: () {
                 setState(() {
                   dataWishList = data;

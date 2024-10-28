@@ -6,9 +6,8 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/Component/Text/ParagraphText.dart';
 import 'package:todo_today/main.dart';
-import 'package:todo_today/mainMoney.dart';
+import 'package:todo_today/mainFinancial.dart';
 import 'package:todo_today/mainWishList.dart';
-import 'package:todo_today/views/Money/buy/BuyPage.dart';
 import 'package:todo_today/Component/CircularButton.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/views/Todo/homepage/todoCard.dart';
@@ -294,6 +293,30 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                             MaterialPageRoute(
                               builder: (context) {
                                 return Mainwishlist();
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: Offset(degOneTranslationAnimation.value * -60,
+                        degOneTranslationAnimation.value * -60),
+                    child: Transform(
+                      transform:
+                          Matrix4.rotationZ(rotationAnimation.value * 5 / 100)
+                            ..scale(degOneTranslationAnimation.value),
+                      alignment: Alignment.center,
+                      child: CircularButton(
+                        color: PRIMARY_COLOR,
+                        icon: Icons.attach_money,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) {
+                                return MainMoney(user: widget.user);
                               },
                             ),
                           );
