@@ -7,6 +7,7 @@ import 'package:todo_today/Component/FormattedDateTime.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/mainWishList.dart';
+import 'package:todo_today/views/Money/ListWalletPage.dart';
 import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 
 class Financialpage extends StatefulWidget {
@@ -20,6 +21,9 @@ class _FinancialpageState extends State<Financialpage> {
   String? selectedKategori;
   String selectedType = "pengeluaran";
   String? selectedWallet;
+  String tabunganDocId = "Tabungan";
+  String danaDaruratDocId = "Dana Darurat";
+  String kebutuhanDocId = "Kebutuhan";
   @override
   void initState() {
     super.initState();
@@ -73,6 +77,7 @@ class _FinancialpageState extends State<Financialpage> {
           selectedKategori = "Jajan";
           var titleController = TextEditingController();
           var totalController = TextEditingController();
+          var kategoriController = TextEditingController();
           showDialog(
             context: context,
             builder: (context) =>
@@ -244,10 +249,43 @@ class _FinancialpageState extends State<Financialpage> {
                                       showDialog(
                                         context: context,
                                         builder: (context) => AlertDialog(
-                                          title: Text(
-                                            "Tambah Kategori bro",
-                                            style: myTextStyle(),
+                                          backgroundColor: Colors.white,
+                                          title: Center(
+                                            child: Text(
+                                              "Nambahin Kategori",
+                                              style: myTextStyle(
+                                                color: PRIMARY_COLOR,
+                                                size: 18,
+                                              ),
+                                            ),
                                           ),
+                                          content: PrimaryTextField(
+                                            controller: kategoriController,
+                                            hintText: "Kategori apah",
+                                            onChanged: (data) {},
+                                          ),
+                                          actions: [
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.white,
+                                              ),
+                                              onPressed: () {
+                                                kategori.add({
+                                                  "name": kategoriController
+                                                      .value.text,
+                                                  "time": DateTime.now(),
+                                                });
+                                                dialogSetState(() {});
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                "Syudah",
+                                                style: myTextStyle(
+                                                  color: PRIMARY_COLOR,
+                                                ),
+                                              ),
+                                            )
+                                          ],
                                         ),
                                       );
                                     }
@@ -308,29 +346,6 @@ class _FinancialpageState extends State<Financialpage> {
                             formatDateWithTime(selectedDateTime),
                             style: myTextStyle(),
                           )),
-                      CustomizableDatePickerWidget(
-                          separatorWidget: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 32),
-                            child: Text(
-                              ":",
-                              style: TextStyle(),
-                            ),
-                          ),
-                          locale: DateTimePickerLocale.id,
-                          looping: true,
-                          initialDate: selectedDateTime,
-                          dateFormat: "dd-MMMM-yyyy",
-                          pickerTheme: const DateTimePickerTheme(
-                              itemTextStyle: TextStyle(),
-                              backgroundColor: Color(0xFFEBEBEB),
-                              itemHeight: 80,
-                              pickerHeight: 300,
-                              dividerTheme: DatePickerDividerTheme(
-                                  dividerColor: Color(0xFF00A962),
-                                  thickness: 3,
-                                  height: 2)),
-                          onChange: (dateTime, selectedIndex) =>
-                              selectedDateTime = dateTime),
                       Align(
                         alignment: Alignment.centerRight,
                         child: StreamBuilder(
@@ -364,8 +379,9 @@ class _FinancialpageState extends State<Financialpage> {
                                     });
                                   }
                                   updateAmount(
-                                    selectedWallet: selectedWallet!,
-                                    selectedType: selectedType,
+                                    selectedWallet:
+                                        selectedWallet!.toLowerCase(),
+                                    selectedType: selectedType.toLowerCase(),
                                     totalAmount: totalAmount,
                                     snapshot: snapshot,
                                     wallet: wallet,
@@ -405,14 +421,14 @@ class _FinancialpageState extends State<Financialpage> {
                   DocumentSnapshot? danaDaruratDoc;
                   try {
                     for (var doc in snapshot.data!.docs) {
-                      if (doc.id == "tabungan") {
+                      if (doc.id == tabunganDocId) {
                         print("EXIST");
                         tabunganDoc = doc;
                         break;
                       }
                     }
                     for (var doc in snapshot.data!.docs) {
-                      if (doc.id == "dana_darurat") {
+                      if (doc.id == danaDaruratDocId) {
                         print("EXIST");
                         danaDaruratDoc = doc;
                         break;
@@ -503,7 +519,7 @@ class _FinancialpageState extends State<Financialpage> {
                       DocumentSnapshot? kebutuhanDoc;
                       try {
                         for (var doc in snapshot.data!.docs) {
-                          if (doc.id == "kebutuhan") {
+                          if (doc.id == kebutuhanDocId) {
                             kebutuhanDoc = doc;
                           }
                         }
@@ -530,7 +546,7 @@ class _FinancialpageState extends State<Financialpage> {
                                 style: myTextStyle(),
                               ),
                               Text(
-                                formatToRupiah(kebutuhanDoc["max_amount"]),
+                                formatToRupiah(kebutuhanDoc["maxAmount"]),
                                 style: myTextStyle(),
                               )
                             ],
@@ -538,6 +554,32 @@ class _FinancialpageState extends State<Financialpage> {
                         ],
                       );
                     }),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Listwalletpage(
+                          wallet: wallet,
+                        ),
+                      ));
+                },
+                child: Container(
+                  height: 36,
+                  margin: EdgeInsets.symmetric(horizontal: 12),
+                  width: MediaQuery.of(context).size.width,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "Dompet lainnya...",
+                      style: myTextStyle(),
+                    ),
+                  ),
+                ),
               ),
               StreamBuilder(
                   stream: record.orderBy("time", descending: true).snapshots(),
@@ -665,13 +707,17 @@ class _FinancialpageState extends State<Financialpage> {
                                               Text(
                                                 formatToRupiah(dailyTotal[
                                                     'totalPemasukan']),
-                                                style: myTextStyle(size: 16),
+                                                style: myTextStyle(
+                                                    size: 16,
+                                                    color: Colors.green),
                                               ),
                                               SizedBox(width: 12),
                                               Text(
                                                 formatToRupiah(dailyTotal[
                                                     'totalPengeluaran']),
-                                                style: myTextStyle(size: 16),
+                                                style: myTextStyle(
+                                                    size: 16,
+                                                    color: Colors.red),
                                               ),
                                             ],
                                           ),
@@ -681,7 +727,10 @@ class _FinancialpageState extends State<Financialpage> {
                                   ),
                                   Column(
                                     children: groupedData[dailyTotal['date']]!
-                                        .map((doc) => FinancialTile1(data: doc))
+                                        .map((doc) => FinancialTile1(
+                                            data: doc,
+                                            record: record,
+                                            wallet: wallet))
                                         .toList(),
                                   ),
                                 ],
