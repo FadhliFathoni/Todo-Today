@@ -1,9 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:customizable_datetime_picker/date_picker_widget.dart';
+import 'package:customizable_datetime_picker/sources/widget/customizable_date_picker_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:todo_today/Component/FormattedDateTime.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/mainWishList.dart';
+import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 
 class Financialpage extends StatefulWidget {
   Financialpage({super.key, required this.user});
@@ -13,24 +17,42 @@ class Financialpage extends StatefulWidget {
 }
 
 class _FinancialpageState extends State<Financialpage> {
-  String? selectedKategori; // Variabel state untuk kategori yang dipilih
-  TimeOfDay? selectedTime;
-
+  String? selectedKategori;
+  String selectedType = "pengeluaran";
+  String? selectedWallet;
   @override
   void initState() {
     super.initState();
     checkIsExist(widget.user);
   }
 
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
+  DateTime selectedDateTime = DateTime.now();
+
+  Future<void> selectDateTime(BuildContext context,
+      {required void Function(void Function()) dialogSetState}) async {
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialTime: selectedTime ?? TimeOfDay.now(),
+      initialDate: selectedDateTime,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
     );
-    if (picked != null && picked != selectedTime) {
-      setState(() {
-        selectedTime = picked;
-      });
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay.fromDateTime(selectedDateTime));
+
+      if (pickedTime != null) {
+        dialogSetState(() {
+          selectedDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
     }
   }
 
@@ -45,401 +67,635 @@ class _FinancialpageState extends State<Financialpage> {
     return Scaffold(
       backgroundColor: BG_COLOR,
       floatingActionButton: FloatingActionButton(
+        shape: CircleBorder(),
+        backgroundColor: Colors.white,
         onPressed: () {
           selectedKategori = "Jajan";
           var titleController = TextEditingController();
+          var totalController = TextEditingController();
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: Row(
-                children: [
-                  Expanded(
-                      child: Center(
-                    child: Text(
-                      "Pengeluaran",
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  )),
-                  Expanded(
-                      child: Center(
-                    child: Text(
-                      "Pendapatan",
-                      style: TextStyle(fontSize: 14),
-                    ),
-                  )),
-                ],
-              ),
-              content: StatefulBuilder(builder: (context, dialogSetState) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    PrimaryTextField(
-                      controller: titleController,
-                      hintText: "Buat apa?",
-                      onChanged: (var data) {},
-                    ),
-                    StreamBuilder(
-                      stream: kategori.snapshots(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return CircularProgressIndicator();
-                        }
-
-                        var items = [
-                          DropdownMenuItem<String>(
-                            value: "tambah_kategori",
-                            child: Text("Tambah Kategori"),
+            builder: (context) =>
+                StatefulBuilder(builder: (context, dialogSetState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                title: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Stack(
+                    children: [
+                      AnimatedAlign(
+                        duration: Duration(milliseconds: 300),
+                        alignment: selectedType == "pengeluaran"
+                            ? Alignment.centerLeft
+                            : Alignment.centerRight,
+                        child: Container(
+                          width: MediaQuery.of(context).size.width / 3,
+                          decoration: BoxDecoration(
+                            color: selectedType == "pengeluaran"
+                                ? BG_COLOR
+                                : BG_COLOR,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          ...snapshot.data!.docs
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                dialogSetState(() {
+                                  selectedType = "pengeluaran";
+                                });
+                              },
+                              child: Center(
+                                child: Text(
+                                  "Pengeluaran",
+                                  style: myTextStyle(
+                                    size: 14,
+                                    color: selectedType == "pengeluaran"
+                                        ? Colors.white
+                                        : BG_COLOR,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                dialogSetState(() {
+                                  selectedType = "pemasukan";
+                                });
+                              },
+                              child: Center(
+                                child: Text(
+                                  "Pemasukan",
+                                  style: myTextStyle(
+                                    size: 14,
+                                    color: selectedType == "pemasukan"
+                                        ? Colors.white
+                                        : BG_COLOR,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                content: AnimatedSize(
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Visibility(
+                        visible: selectedType == "pengeluaran",
+                        replacement: Column(
+                          children: [
+                            PrimaryTextField(
+                              controller: totalController,
+                              hintText: "Berapa?",
+                              textInputType: TextInputType.number,
+                              onChanged: (var data) {
+                                int amount = int.tryParse(data.replaceAll(
+                                        RegExp(r'[^0-9]'), '')) ??
+                                    0;
+                                totalController.value = TextEditingValue(
+                                  text: formatToRupiah(amount),
+                                  selection: TextSelection.fromPosition(
+                                    TextPosition(
+                                      offset: formatToRupiah(amount).length,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            PrimaryTextField(
+                              controller: titleController,
+                              hintText: "Buat apa?",
+                              onChanged: (var data) {},
+                            ),
+                            PrimaryTextField(
+                              controller: totalController,
+                              hintText: "Berapa?",
+                              textInputType: TextInputType.number,
+                              onChanged: (var data) {
+                                int amount = int.tryParse(data.replaceAll(
+                                        RegExp(r'[^0-9]'), '')) ??
+                                    0;
+                                totalController.value = TextEditingValue(
+                                  text: formatToRupiah(amount),
+                                  selection: TextSelection.fromPosition(
+                                    TextPosition(
+                                      offset: formatToRupiah(amount).length,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            StreamBuilder(
+                              stream: kategori.snapshots(),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData) {
+                                  return CircularProgressIndicator();
+                                }
+                                var items = [
+                                  DropdownMenuItem<String>(
+                                    value: "tambah_kategori",
+                                    child: Text(
+                                      "Tambah Kategori",
+                                      style: myTextStyle(color: PRIMARY_COLOR),
+                                    ),
+                                  ),
+                                  ...snapshot.data!.docs
+                                      .map<DropdownMenuItem<String>>((doc) {
+                                    return DropdownMenuItem<String>(
+                                      value: doc['name'],
+                                      child: Text(
+                                        doc['name'],
+                                        style: myTextStyle(),
+                                      ),
+                                    );
+                                  }).toList()
+                                ];
+                                return DropdownButton<String>(
+                                  dropdownColor: Colors.white,
+                                  style: myTextStyle(),
+                                  iconEnabledColor: PRIMARY_COLOR,
+                                  items: items,
+                                  value: selectedKategori,
+                                  onChanged: (value) {
+                                    dialogSetState(() {
+                                      selectedKategori = value;
+                                    });
+                                    if (selectedKategori == "tambah_kategori") {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: Text(
+                                            "Tambah Kategori bro",
+                                            style: myTextStyle(),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  hint: Text(
+                                    "Pilih Kategori",
+                                    style: myTextStyle(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      StreamBuilder(
+                        stream: wallet.snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return CircularProgressIndicator();
+                          }
+
+                          var walletItems = snapshot.data!.docs
                               .map<DropdownMenuItem<String>>((doc) {
                             return DropdownMenuItem<String>(
-                              value: doc['name'],
-                              child: Text(doc['name']),
+                              value: doc.id,
+                              child: Text(
+                                doc['name'],
+                                style: myTextStyle(),
+                              ),
                             );
-                          }).toList()
-                        ];
-                        return DropdownButton<String>(
-                          items: items,
-                          value: selectedKategori,
-                          onChanged: (value) {
-                            dialogSetState(() {
-                              selectedKategori = value;
-                            });
-                            if (selectedKategori == "tambah_kategori") {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: Text("Tambah Kategori bro"),
+                          }).toList();
+                          return DropdownButton<String>(
+                            dropdownColor: Colors.white,
+                            iconEnabledColor: PRIMARY_COLOR,
+                            style: myTextStyle(),
+                            items: walletItems,
+                            value: selectedWallet,
+                            onChanged: (value) {
+                              dialogSetState(() {
+                                selectedWallet = value;
+                              });
+                            },
+                            hint: Text(
+                              "Pilih Wallet",
+                              style: myTextStyle(),
+                            ),
+                          );
+                        },
+                      ),
+                      GestureDetector(
+                          onTap: () async {
+                            selectDateTime(
+                              context,
+                              dialogSetState: dialogSetState,
+                            );
+                          },
+                          child: Text(
+                            formatDateWithTime(selectedDateTime),
+                            style: myTextStyle(),
+                          )),
+                      CustomizableDatePickerWidget(
+                          separatorWidget: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(
+                              ":",
+                              style: TextStyle(),
+                            ),
+                          ),
+                          locale: DateTimePickerLocale.id,
+                          looping: true,
+                          initialDate: selectedDateTime,
+                          dateFormat: "dd-MMMM-yyyy",
+                          pickerTheme: const DateTimePickerTheme(
+                              itemTextStyle: TextStyle(),
+                              backgroundColor: Color(0xFFEBEBEB),
+                              itemHeight: 80,
+                              pickerHeight: 300,
+                              dividerTheme: DatePickerDividerTheme(
+                                  dividerColor: Color(0xFF00A962),
+                                  thickness: 3,
+                                  height: 2)),
+                          onChange: (dateTime, selectedIndex) =>
+                              selectedDateTime = dateTime),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: StreamBuilder(
+                            stream: wallet.snapshots(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return CircularProgressIndicator();
+                              }
+                              return ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                ),
+                                onPressed: () {
+                                  int totalAmount = convertRupiahToInt(
+                                      totalController.value.text);
+                                  if (selectedType == "pengeluaran") {
+                                    record.add({
+                                      "title": titleController.value.text,
+                                      "kategori": selectedKategori,
+                                      "time": selectedDateTime,
+                                      "total": totalAmount,
+                                      "type": "Pengeluaran",
+                                      "wallet": selectedWallet,
+                                    });
+                                  } else {
+                                    record.add({
+                                      "time": selectedDateTime,
+                                      "total": totalAmount,
+                                      "type": "Pemasukan",
+                                      "wallet": selectedWallet,
+                                    });
+                                  }
+                                  updateAmount(
+                                    selectedWallet: selectedWallet!,
+                                    selectedType: selectedType,
+                                    totalAmount: totalAmount,
+                                    snapshot: snapshot,
+                                    wallet: wallet,
+                                  );
+                                  Navigator.pop(context);
+                                },
+                                child: Text(
+                                  "Selesai",
+                                  style: myTextStyle(color: PRIMARY_COLOR),
                                 ),
                               );
-                            }
-                          },
-                          hint: Text("Pilih Kategori"),
-                        );
-                      },
-                    ),
-                    Text(
-                      "Pilih Waktu: ${selectedTime != null ? selectedTime!.format(context) : 'Belum Dipilih'}",
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        TimeOfDay? time = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.now(),
-                        );
-                        if (time != null) {
-                          // Lakukan sesuatu dengan waktu yang dipilih
-                          print("Waktu terpilih: ${time.format(context)}");
-                        }
-                      },
-                      child: Text("Pilih Waktu"),
-                    ),
-                  ],
-                );
-              }),
-            ),
+                            }),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           );
         },
-        child: Icon(Icons.add),
+        child: Icon(
+          Icons.add,
+          color: PRIMARY_COLOR,
+        ),
       ),
       body: Container(
-        child: Column(
-          children: [
-            StreamBuilder(
-              stream: wallet.snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                DocumentSnapshot? tabunganDoc;
-                DocumentSnapshot? danaDaruratDoc;
-                try {
-                  for (var doc in snapshot.data!.docs) {
-                    if (doc.id == "tabungan") {
-                      print("EXIST");
-                      tabunganDoc = doc;
-                      break;
-                    }
-                  }
-                  for (var doc in snapshot.data!.docs) {
-                    if (doc.id == "dana_darurat") {
-                      print("EXIST");
-                      danaDaruratDoc = doc;
-                      break;
-                    }
-                  }
-                } catch (e) {
-                  print("Error: $e");
-                }
-                if (tabunganDoc == null || danaDaruratDoc == null) {
-                  return Center(child: Text("Data not found"));
-                }
-                var dataTabungan = tabunganDoc.data() as Map<String, dynamic>;
-                var dataDanaDarurat =
-                    danaDaruratDoc.data() as Map<String, dynamic>;
-                return Column(
-                  children: [
-                    Container(
-                      margin: EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              height: 100,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text("Kebutuhan"),
-                                  Text(formatToRupiah(dataTabungan["amount"])),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              height: 100,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text("Dana Darurat"),
-                                  Text(
-                                      formatToRupiah(dataDanaDarurat["amount"]))
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            Container(
-              height: 100,
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: EdgeInsets.only(left: 12, right: 12, bottom: 12),
-              child: StreamBuilder(
-                  stream: wallet.snapshots(),
-                  builder: (context, snapshot) {
-                    DocumentSnapshot? kebutuhanDoc;
-                    try {
-                      for (var doc in snapshot.data!.docs) {
-                        if (doc.id == "kebutuhan") {
-                          kebutuhanDoc = doc;
-                        }
-                      }
-                    } catch (e) {}
-                    if (kebutuhanDoc == null) {
-                      return Container();
-                    }
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Kebutuhan"),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(formatToRupiah(kebutuhanDoc["amount"])),
-                            Text("/"),
-                            Text(formatToRupiah(kebutuhanDoc["max_amount"]))
-                          ],
-                        )
-                      ],
-                    );
-                  }),
-            ),
-            StreamBuilder(
-                stream: record.orderBy("time", descending: true).snapshots(),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              StreamBuilder(
+                stream: wallet.snapshots(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());
                   }
-                  if (snapshot.hasError) {
-                    return Center(child: Text("Error: ${snapshot.error}"));
+                  DocumentSnapshot? tabunganDoc;
+                  DocumentSnapshot? danaDaruratDoc;
+                  try {
+                    for (var doc in snapshot.data!.docs) {
+                      if (doc.id == "tabungan") {
+                        print("EXIST");
+                        tabunganDoc = doc;
+                        break;
+                      }
+                    }
+                    for (var doc in snapshot.data!.docs) {
+                      if (doc.id == "dana_darurat") {
+                        print("EXIST");
+                        danaDaruratDoc = doc;
+                        break;
+                      }
+                    }
+                  } catch (e) {
+                    print("Error: $e");
                   }
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  if (tabunganDoc == null || danaDaruratDoc == null) {
                     return Center(
-                      child: Column(
+                        child: Text(
+                      "Data not found",
+                      style: myTextStyle(),
+                    ));
+                  }
+                  var dataTabungan = tabunganDoc.data() as Map<String, dynamic>;
+                  var dataDanaDarurat =
+                      danaDaruratDoc.data() as Map<String, dynamic>;
+                  return Column(
+                    children: [
+                      Container(
+                        margin: EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                height: 100,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Tabungan",
+                                      style: myTextStyle(),
+                                    ),
+                                    Text(
+                                      formatToRupiah(dataTabungan["amount"]),
+                                      style: myTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                height: 100,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Dana Darurat",
+                                      style: myTextStyle(),
+                                    ),
+                                    Text(
+                                      formatToRupiah(dataDanaDarurat["amount"]),
+                                      style: myTextStyle(),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              Container(
+                height: 100,
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                margin: EdgeInsets.only(left: 12, right: 12, bottom: 12),
+                child: StreamBuilder(
+                    stream: wallet.snapshots(),
+                    builder: (context, snapshot) {
+                      DocumentSnapshot? kebutuhanDoc;
+                      try {
+                        for (var doc in snapshot.data!.docs) {
+                          if (doc.id == "kebutuhan") {
+                            kebutuhanDoc = doc;
+                          }
+                        }
+                      } catch (e) {}
+                      if (kebutuhanDoc == null) {
+                        return Container();
+                      }
+                      return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.calendar_today,
-                              size: 50, color: Colors.black.withOpacity(0.15)),
-                          SizedBox(height: 16),
                           Text(
-                            "Belum ada catatan nihhh",
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.black.withOpacity(0.15),
-                              fontFamily: PRIMARY_FONT,
-                            ),
+                            "Kebutuhan",
+                            style: myTextStyle(),
                           ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  var docs = snapshot.data!.docs;
-                  Map<String, List<DocumentSnapshot>> groupedData = {};
-
-                  for (var doc in docs) {
-                    var date = (doc["time"] as Timestamp).toDate();
-                    var monthYear = DateFormat("MMMM yyyy").format(date);
-                    if (!groupedData.containsKey(monthYear)) {
-                      groupedData[monthYear] = [];
-                    }
-                    groupedData[monthYear]!.add(doc);
-                  }
-                  return ListView.separated(
-                    separatorBuilder: (context, index) => SizedBox(
-                      height: 12,
-                    ),
-                    physics: NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: groupedData.keys.length,
-                    itemBuilder: (context, index) {
-                      var monthYear = groupedData.keys.elementAt(index);
-                      var monthDocs = groupedData[monthYear]!;
-                      return Column(
-                        children: [
-                          Container(
-                            margin: EdgeInsets.only(
-                              left: 12,
-                              right: 12,
-                              bottom: 12,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("Riwayat"),
-                                Text(monthYear),
-                              ],
-                            ),
-                          ),
-                          ...monthDocs
-                              .map((doc) => FinancialTile(
-                                    data: doc,
-                                  ))
-                              .toList(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                formatToRupiah(kebutuhanDoc["amount"]),
+                                style: myTextStyle(),
+                              ),
+                              Text(
+                                "/",
+                                style: myTextStyle(),
+                              ),
+                              Text(
+                                formatToRupiah(kebutuhanDoc["max_amount"]),
+                                style: myTextStyle(),
+                              )
+                            ],
+                          )
                         ],
                       );
-                    },
-                  );
-                })
-          ],
+                    }),
+              ),
+              StreamBuilder(
+                  stream: record.orderBy("time", descending: true).snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                          child: Text(
+                        "Error: ${snapshot.error}",
+                        style: myTextStyle(),
+                      ));
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return Container(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.calendar_today,
+                                size: 50,
+                                color: Colors.black.withOpacity(0.15)),
+                            SizedBox(height: 16),
+                            Text(
+                              "Belum ada catatan nihhh",
+                              style: myTextStyle(
+                                size: 18,
+                                color: Colors.black.withOpacity(0.15),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    var docs = snapshot.data!.docs;
+                    Map<String, List<DocumentSnapshot>> groupedData = {};
+
+                    for (var doc in docs) {
+                      var date = (doc["time"] as Timestamp).toDate();
+                      var dayMonthYear = DateFormat("dd MMMM yyyy")
+                          .format(date); // Format per hari
+                      if (!groupedData.containsKey(dayMonthYear)) {
+                        groupedData[dayMonthYear] = [];
+                      }
+                      groupedData[dayMonthYear]!.add(doc);
+                    }
+
+                    List<Map<String, dynamic>> dailyTotals = [];
+
+                    for (var dayDocs in groupedData.values) {
+                      int totalPemasukan = 0;
+                      int totalPengeluaran = 0;
+
+                      for (var doc in dayDocs) {
+                        if (doc["type"].toString().toLowerCase() ==
+                            "pemasukan") {
+                          totalPemasukan += doc["total"] as int;
+                        } else if (doc["type"].toString().toLowerCase() ==
+                            "pengeluaran") {
+                          totalPengeluaran += doc["total"] as int;
+                        }
+                      }
+
+                      var date = (dayDocs.first["time"] as Timestamp).toDate();
+                      var formattedDate =
+                          DateFormat("dd MMMM yyyy").format(date);
+                      var monthYear = DateFormat("MMMM yyyy")
+                          .format(date); // Define monthYear here
+
+                      dailyTotals.add({
+                        'date': formattedDate,
+                        'totalPemasukan': totalPemasukan,
+                        'totalPengeluaran': totalPengeluaran,
+                        'monthYear': monthYear, // Save monthYear for displaying
+                      });
+                    }
+
+                    return ListView.separated(
+                      separatorBuilder: (context, index) =>
+                          SizedBox(height: 12),
+                      physics: NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      itemCount: dailyTotals.length,
+                      itemBuilder: (context, index) {
+                        var dailyTotal = dailyTotals[index];
+                        String monthYear = dailyTotal['monthYear'];
+
+                        return Column(
+                          children: [
+                            if (index == 0 ||
+                                dailyTotals[index - 1]['monthYear'] !=
+                                    monthYear)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                  monthYear,
+                                  style: myTextStyle(
+                                      size: 18, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            Container(
+                              margin: EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12)),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            dailyTotal["date"],
+                                            style: myTextStyle(size: 16),
+                                          ),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                formatToRupiah(dailyTotal[
+                                                    'totalPemasukan']),
+                                                style: myTextStyle(size: 16),
+                                              ),
+                                              SizedBox(width: 12),
+                                              Text(
+                                                formatToRupiah(dailyTotal[
+                                                    'totalPengeluaran']),
+                                                style: myTextStyle(size: 16),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Column(
+                                    children: groupedData[dailyTotal['date']]!
+                                        .map((doc) => FinancialTile1(data: doc))
+                                        .toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  })
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-class FinancialTile extends StatelessWidget {
-  FinancialTile({
-    required this.data,
-    super.key,
-  });
-
-  DocumentSnapshot<Object?> data;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(12),
-      margin: EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(12)),
-      height: 100,
-      width: MediaQuery.of(context).size.width,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                height: 50,
-                width: 50,
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              SizedBox(
-                width: 12,
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(formatToRupiah(data["total"])),
-                  Text(data["title"])
-                ],
-              )
-            ],
-          ),
-          Text(convertTimestampToIndonesianDate(data["time"])!)
-        ],
-      ),
-    );
-  }
-}
-
-void checkIsExist(String user) async {
-  var doc = FirebaseFirestore.instance.collection("finance").doc(user);
-  var wallet = doc.collection("wallet");
-  var kategori = doc.collection("kategori");
-
-  var tabunganDoc = await wallet.doc("tabungan").get();
-  if (!tabunganDoc.exists) {
-    wallet.doc("tabungan").set({
-      "name": "Tabungan",
-      "amount": 0,
-    });
-  }
-
-  var danaDaruratDoc = await wallet.doc("dana_darurat").get();
-  if (!danaDaruratDoc.exists) {
-    wallet.doc("dana_darurat").set({
-      "name": "Tabungan",
-      "amount": 0,
-    });
-  }
-
-  var kebutuhanDoc = await wallet.doc("kebutuhan").get();
-  if (!kebutuhanDoc.exists) {
-    wallet.doc("kebutuhan").set({
-      "name": "Tabungan",
-      "amount": 0,
-    });
-  }
-
-  var kategoriDoc = await kategori.get();
-  if (kategoriDoc.size == 0) {
-    kategori.add({
-      "name": "Jajan",
-      "time": DateTime.now(),
-    });
-    kategori.add({
-      "name": "Belanja Online",
-      "time": DateTime.now(),
-    });
-  }
-}
-
-String formatToRupiah(int amount) {
-  final formatter =
-      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-  return formatter.format(amount);
 }

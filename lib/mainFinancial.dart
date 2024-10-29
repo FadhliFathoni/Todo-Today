@@ -3,16 +3,16 @@ import 'package:todo_today/main.dart';
 import 'package:todo_today/views/Money/FinancialPage.dart';
 import 'package:todo_today/views/Money/SummaryPage.dart';
 
-class MainMoney extends StatefulWidget {
-  const MainMoney({super.key, required this.user});
+class MainFinancial extends StatefulWidget {
+  const MainFinancial({super.key, required this.user});
 
   final String user;
 
   @override
-  State<MainMoney> createState() => _MainMoneyState();
+  State<MainFinancial> createState() => _MainFinancialState();
 }
 
-class _MainMoneyState extends State<MainMoney> {
+class _MainFinancialState extends State<MainFinancial> {
   int currentIndex = 0;
   Widget? buildBody() {
     switch (currentIndex) {
@@ -33,6 +33,7 @@ class _MainMoneyState extends State<MainMoney> {
     return Scaffold(
       backgroundColor: BG_COLOR,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         leading: BackButton(
           color: PRIMARY_COLOR,
         ),
@@ -44,6 +45,7 @@ class _MainMoneyState extends State<MainMoney> {
       ),
       body: buildBody(),
       bottomNavigationBar: BottomNavigationBar(
+          backgroundColor: Colors.white,
           selectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
           unselectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
           selectedItemColor: PRIMARY_COLOR,

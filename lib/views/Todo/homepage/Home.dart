@@ -316,7 +316,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                             context,
                             MaterialPageRoute(
                               builder: (context) {
-                                return MainMoney(user: widget.user);
+                                return MainFinancial(user: widget.user);
                               },
                             ),
                           );
