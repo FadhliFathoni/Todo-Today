@@ -78,6 +78,7 @@ class _FinancialpageState extends State<Financialpage> {
           var titleController = TextEditingController();
           var totalController = TextEditingController();
           var kategoriController = TextEditingController();
+          // var linkController = TextEditingController();
           showDialog(
             context: context,
             builder: (context) =>
@@ -210,11 +211,19 @@ class _FinancialpageState extends State<Financialpage> {
                                 );
                               },
                             ),
+                            // Visibility(
+                            //   visible: (selectedKategori == "Belanja Online"),
+                            //   child: PrimaryTextField(
+                            //     controller: linkController,
+                            //     hintText: "Ada linknya ngga? (Opsional)",
+                            //     onChanged: (data) {},
+                            //   ),
+                            // ),
                             StreamBuilder(
                               stream: kategori.snapshots(),
                               builder: (context, snapshot) {
                                 if (!snapshot.hasData) {
-                                  return CircularProgressIndicator();
+                                  return Container();
                                 }
                                 var items = [
                                   DropdownMenuItem<String>(
@@ -304,7 +313,7 @@ class _FinancialpageState extends State<Financialpage> {
                         stream: wallet.snapshots(),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) {
-                            return CircularProgressIndicator();
+                            return Container();
                           }
 
                           var walletItems = snapshot.data!.docs
@@ -352,25 +361,39 @@ class _FinancialpageState extends State<Financialpage> {
                             stream: wallet.snapshots(),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData) {
-                                return CircularProgressIndicator();
+                                return Container();
                               }
                               return ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
+                                  foregroundColor: PRIMARY_COLOR,
                                 ),
                                 onPressed: () {
-                                  int totalAmount = convertRupiahToInt(
-                                      totalController.value.text);
-                                  if (selectedType == "pengeluaran") {
-                                    record.add({
-                                      "title": titleController.value.text,
-                                      "kategori": selectedKategori,
-                                      "time": selectedDateTime,
-                                      "total": totalAmount,
-                                      "type": "Pengeluaran",
-                                      "wallet": selectedWallet,
-                                    });
-                                  } else {
+                                  int totalAmount = 0;
+                                  if (titleController.value.text.isNotEmpty &&
+                                      selectedKategori != null &&
+                                      totalController.value.text.isNotEmpty &&
+                                      selectedWallet != null) {
+                                    totalAmount = convertRupiahToInt(
+                                        totalController.value.text);
+                                    if (selectedType == "pengeluaran") {
+                                      record.add({
+                                        "title": titleController.value.text,
+                                        "kategori": selectedKategori,
+                                        "time": selectedDateTime,
+                                        "total": totalAmount,
+                                        "type": "Pengeluaran",
+                                        "wallet": selectedWallet,
+                                        // "link": (selectedKategori ==
+                                        //         "Belanja Online")
+                                        //     ? linkController.value.text
+                                        //     : "",
+                                      });
+                                    }
+                                  } else if (selectedType == "pemasukan" &&
+                                      totalController.value.text.isNotEmpty) {
+                                    totalAmount = convertRupiahToInt(
+                                        totalController.value.text);
                                     record.add({
                                       "time": selectedDateTime,
                                       "total": totalAmount,
@@ -378,18 +401,20 @@ class _FinancialpageState extends State<Financialpage> {
                                       "wallet": selectedWallet,
                                     });
                                   }
-                                  updateAmount(
-                                    selectedWallet:
-                                        selectedWallet!.toLowerCase(),
-                                    selectedType: selectedType.toLowerCase(),
-                                    totalAmount: totalAmount,
-                                    snapshot: snapshot,
-                                    wallet: wallet,
-                                  );
+                                  if (totalAmount != 0) {
+                                    updateAmount(
+                                      selectedWallet:
+                                          selectedWallet!.toLowerCase(),
+                                      selectedType: selectedType.toLowerCase(),
+                                      totalAmount: totalAmount,
+                                      snapshot: snapshot,
+                                      wallet: wallet,
+                                    );
+                                  }
                                   Navigator.pop(context);
                                 },
                                 child: Text(
-                                  "Selesai",
+                                  "Syudah",
                                   style: myTextStyle(color: PRIMARY_COLOR),
                                 ),
                               );
@@ -415,7 +440,7 @@ class _FinancialpageState extends State<Financialpage> {
                 stream: wallet.snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
-                    return Center(child: CircularProgressIndicator());
+                    return Center(child: Container());
                   }
                   DocumentSnapshot? tabunganDoc;
                   DocumentSnapshot? danaDaruratDoc;
@@ -555,37 +580,42 @@ class _FinancialpageState extends State<Financialpage> {
                       );
                     }),
               ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Listwalletpage(
-                          wallet: wallet,
+              StreamBuilder(
+                  stream: record.snapshots(),
+                  builder: (context, snapshot) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Listwalletpage(
+                              wallet: wallet,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 36,
+                        margin: EdgeInsets.symmetric(horizontal: 12),
+                        width: MediaQuery.of(context).size.width,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ));
-                },
-                child: Container(
-                  height: 36,
-                  margin: EdgeInsets.symmetric(horizontal: 12),
-                  width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "Dompet lainnya...",
-                      style: myTextStyle(),
-                    ),
-                  ),
-                ),
-              ),
+                        child: Center(
+                          child: Text(
+                            "Dompet lainnya...",
+                            style: myTextStyle(),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
               StreamBuilder(
                   stream: record.orderBy("time", descending: true).snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
+                      return Center(child: Container());
                     }
                     if (snapshot.hasError) {
                       return Center(
@@ -596,6 +626,7 @@ class _FinancialpageState extends State<Financialpage> {
                     }
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                       return Container(
+                        margin: EdgeInsets.all(50),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -673,13 +704,20 @@ class _FinancialpageState extends State<Financialpage> {
                             if (index == 0 ||
                                 dailyTotals[index - 1]['monthYear'] !=
                                     monthYear)
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: EdgeInsets.all(12),
+                                margin: EdgeInsets.only(bottom: 12),
                                 child: Text(
                                   monthYear,
                                   style: myTextStyle(
-                                      size: 18, fontWeight: FontWeight.bold),
+                                    size: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: PRIMARY_COLOR,
+                                  ),
                                 ),
                               ),
                             Container(

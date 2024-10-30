@@ -47,57 +47,248 @@ class _ListwalletpageState extends State<Listwalletpage> {
               ),
               itemBuilder: (context, index) {
                 var dataWallet = data[index];
-                return GestureDetector(
-                  onLongPress: () {
-                    // showDialog(
-                    //   context: context,
-                    //   builder: (context) => AlertDialog(
-                    //     actions: [
-                    //       ElevatedButton(
-                    //         onPressed: () {
-                    //           resetWallet(
-                    //             wallet: widget.wallet,
-                    //             snapshot: snapshot,
-                    //             selectedWallet: dataWallet["name"],
-                    //           );
-                    //         },
-                    //         child: Text("Reset"),
-                    //       ),
-                    //       ElevatedButton(
-                    //         onPressed: () {
-                    //           updateAmount(selectedWallet: dataWallet["name"], selectedType: selectedType, totalAmount: totalAmount, snapshot: snapshot, wallet: wallet)
-                    //         },
-                    //         child: Text("Syudah"),
-                    //       ),
-                    //     ],
-                    //   ),
-                    // );
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.white,
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(dataWallet["name"], style: myTextStyle()),
-                            Text(formatToRupiah(dataWallet["amount"]),
-                                style: myTextStyle()),
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(dataWallet["name"], style: myTextStyle()),
+                          Text(
+                              (dataWallet["name"] != "Kebutuhan")
+                                  ? formatToRupiah(dataWallet["amount"])
+                                  : formatToRupiah(
+                                      dataWallet["maxAmount"] ??
+                                          0 - dataWallet["amount"],
+                                    ),
+                              style: myTextStyle()),
+                        ],
+                      ),
+                      Positioned(
+                        bottom: 12,
+                        right: 12,
+                        child: PopupMenuButton<String>(
+                          icon: Icon(Icons.settings),
+                          onSelected: (value) {
+                            if (value == "edit") {
+                              var nameController = TextEditingController(
+                                  text: dataWallet["name"]);
+                              var amountController = TextEditingController();
+
+                              // Pastikan `amount` adalah angka, bersihkan dari karakter non-numerik terlebih dahulu
+                              int amount = int.tryParse(
+                                    dataWallet["amount"]
+                                        .toString()
+                                        .replaceAll(RegExp(r'[^0-9]'), ''),
+                                  ) ??
+                                  0;
+
+                              // Set nilai awal `amountController` dalam format rupiah
+                              amountController.value = TextEditingValue(
+                                text: formatToRupiah(amount),
+                                selection: TextSelection.fromPosition(
+                                  TextPosition(
+                                      offset: formatToRupiah(amount).length),
+                                ),
+                              );
+
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  title: Center(
+                                    child: Text(
+                                      "Edit Wallet",
+                                      style: myTextStyle(
+                                        color: PRIMARY_COLOR,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      PrimaryTextField(
+                                        controller: nameController,
+                                        hintText: dataWallet["name"],
+                                        onChanged: (data) {},
+                                      ),
+                                      PrimaryTextField(
+                                        textInputType: TextInputType.number,
+                                        controller: amountController,
+                                        hintText: formatToRupiah(
+                                            dataWallet["amount"]),
+                                        onChanged: (data) {
+                                          int amount = int.tryParse(
+                                                data.replaceAll(
+                                                    RegExp(r'[^0-9]'), ''),
+                                              ) ??
+                                              0;
+                                          amountController.value =
+                                              TextEditingValue(
+                                            text: formatToRupiah(amount),
+                                            selection:
+                                                TextSelection.fromPosition(
+                                              TextPosition(
+                                                  offset: formatToRupiah(amount)
+                                                      .length),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white),
+                                      onPressed: () {
+                                        resetWallet(
+                                          wallet: widget.wallet,
+                                          snapshot: snapshot,
+                                          selectedWallet: dataWallet["name"],
+                                        );
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(
+                                        "Reset",
+                                        style:
+                                            myTextStyle(color: PRIMARY_COLOR),
+                                      ),
+                                    ),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: PRIMARY_COLOR,
+                                      ),
+                                      onPressed: () {
+                                        String walletId = getWalletDocId(
+                                          snapshot: snapshot,
+                                          dataWallet: dataWallet,
+                                        );
+                                        widget.wallet.doc(walletId).set({
+                                          "name": nameController.value.text,
+                                          "amount": convertRupiahToInt(
+                                              amountController.value.text),
+                                          "time": DateTime.now(),
+                                        });
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(
+                                        "Syudah",
+                                        style: myTextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            } else if (value == "delete") {
+                              var nameController = TextEditingController();
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  title: Center(
+                                    child: Text(
+                                      "Yakin mau dihapus?",
+                                      style: myTextStyle(
+                                        size: 18,
+                                        color: Colors.red.withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "Ketik dulu : " + dataWallet["name"],
+                                        style: myTextStyle(),
+                                      ),
+                                      PrimaryTextField(
+                                        controller: nameController,
+                                        hintText: dataWallet["name"],
+                                        onChanged: (data) {},
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    Container(
+                                      width: MediaQuery.of(context).size.width,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: Colors.red,
+                                        ),
+                                        onPressed: () {
+                                          if (nameController.value.text ==
+                                              dataWallet["name"]) {
+                                            String idWallet = getWalletDocId(
+                                              snapshot: snapshot,
+                                              dataWallet: dataWallet,
+                                            );
+
+                                            widget.wallet
+                                                .doc(idWallet)
+                                                .delete();
+                                            Navigator.pop(context);
+                                          }
+                                        },
+                                        child: Text(
+                                          "Hapus ajah",
+                                          style: myTextStyle(
+                                              color:
+                                                  Colors.red.withOpacity(0.7)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          },
+                          color: Colors.white,
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: "edit",
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Edit",
+                                    style: myTextStyle(color: Colors.blueGrey),
+                                  ),
+                                  Icon(Icons.edit, color: Colors.blueGrey),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              enabled: (dataWallet["name"] != "Kebutuhan" &&
+                                  dataWallet["name"] != "Dana Darurat" &&
+                                  dataWallet["name"] != "Tabungan"),
+                              value: "delete",
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Delete",
+                                    style: myTextStyle(
+                                        color: Colors.red.withOpacity(0.7)),
+                                  ),
+                                  Icon(Icons.delete,
+                                      color: Colors.red.withOpacity(0.7)),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                        Positioned(
-                          bottom: 12,
-                          right: 12,
-                          child: Icon(
-                            Icons.settings,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -188,13 +379,18 @@ class _ListwalletpageState extends State<Listwalletpage> {
                 ),
                 actions: [
                   ElevatedButton(
+                    style: myElevatedButtonStyle(),
                     onPressed: () {
-                      widget.wallet.doc(walletController.value.text).set({
-                        "name": walletController.value.text,
-                        "amount":
-                            convertRupiahToInt(amountController.value.text),
-                      });
-                      Navigator.pop(context);
+                      if (walletController.value.text.isNotEmpty) {
+                        widget.wallet.doc(walletController.value.text).set({
+                          "name": walletController.value.text,
+                          "amount": (tabunganExist)
+                              ? convertRupiahToInt(amountController.value.text)
+                              : 0,
+                          "time": DateTime.now(),
+                        });
+                        Navigator.pop(context);
+                      }
                     },
                     child: Text(
                       "Syudah",
@@ -209,4 +405,17 @@ class _ListwalletpageState extends State<Listwalletpage> {
       ),
     );
   }
+}
+
+String getWalletDocId(
+    {required AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot,
+    required QueryDocumentSnapshot<Map<String, dynamic>> dataWallet}) {
+  QueryDocumentSnapshot<Map<String, dynamic>>? walletDoc;
+  for (var doc in snapshot.data!.docs) {
+    if (doc.data()["name"] == dataWallet["name"]) {
+      walletDoc = doc;
+      break;
+    }
+  }
+  return walletDoc!.id;
 }

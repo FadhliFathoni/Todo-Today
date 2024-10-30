@@ -1,16 +1,31 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:excel/excel.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:todo_today/Component/FormattedDateTime.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/mainWishList.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 TextStyle myTextStyle({double? size, FontWeight? fontWeight, Color? color}) {
   return TextStyle(
     fontSize: size ?? 14,
     fontWeight: fontWeight ?? FontWeight.normal,
-    color: color ?? Colors.black,
+    color: color ?? Colors.black.withOpacity(0.8),
     fontFamily: PRIMARY_FONT,
+  );
+}
+
+dynamic myElevatedButtonStyle(
+    {Color? backgroundColor, Color? foregroundColor}) {
+  return ElevatedButton.styleFrom(
+    backgroundColor: backgroundColor ?? Colors.white,
+    foregroundColor: foregroundColor ?? PRIMARY_COLOR,
   );
 }
 
@@ -131,7 +146,7 @@ class FinancialTile1 extends StatelessWidget {
 
     return GestureDetector(
       onLongPress: () {
-        var titleController = TextEditingController();
+        var titleController = TextEditingController(text: dataMap["title"]);
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -226,7 +241,19 @@ class FinancialTile1 extends StatelessWidget {
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [Text(title, style: myTextStyle())],
+                  children: [
+                    Text(
+                      title,
+                      style: myTextStyle(
+                        size: 18,
+                      ),
+                    ),
+                    if (dataMap["type"] == "Pengeluaran")
+                      Text(
+                        dataMap["kategori"],
+                        style: myTextStyle(),
+                      )
+                  ],
                 ),
               ],
             ),
@@ -259,6 +286,7 @@ void checkIsExist(String user) async {
     wallet.doc("Tabungan").set({
       "name": "Tabungan",
       "amount": 0,
+      "time": DateTime.now(),
     });
   }
 
@@ -267,6 +295,7 @@ void checkIsExist(String user) async {
     wallet.doc("Dana Darurat").set({
       "name": "Dana Darurat",
       "amount": 0,
+      "time": DateTime.now(),
     });
   }
 
@@ -276,6 +305,7 @@ void checkIsExist(String user) async {
       "name": "Kebutuhan",
       "amount": 0,
       "maxAmount": 0,
+      "time": DateTime.now(),
     });
   }
 
@@ -323,14 +353,15 @@ void updateAmount({
   }
 
   print("WALLET ${walletDoc != null}");
-
   if (walletDoc != null) {
     int currentAmount = walletDoc["amount"] ?? 0;
     int updatedAmount = 0;
 
     if (isDelete == true) {
       if (selectedType == "pengeluaran") {
-        updatedAmount = currentAmount - totalAmount;
+        updatedAmount = selectedWallet == "kebutuhan"
+            ? currentAmount - totalAmount
+            : currentAmount + totalAmount;
         print("MASUK SINI1");
       } else {
         print("MASUK SINI2");
@@ -376,15 +407,88 @@ void resetWallet(
       break;
     }
   }
-  if(walletDoc!.data()["name"] == "kebutuhan"){
-  wallet.doc(walletDoc.id).set({
-    "name": walletDoc.data()["name"],
-    "amount": 0,
-    "maxAmount":0,
-  });}else{
+  if (walletDoc!.data()["name"] == "Kebutuhan") {
     wallet.doc(walletDoc.id).set({
-    "name": walletDoc.data()["name"],
-    "amount": 0,
-  });
+      "name": walletDoc.data()["name"],
+      "amount": 0,
+      "maxAmount": 0,
+      "time": DateTime.now(),
+    });
+  } else {
+    wallet.doc(walletDoc.id).set({
+      "name": walletDoc.data()["name"],
+      "amount": 0,
+      "time": DateTime.now(),
+    });
+  }
+}
+
+Future<void> generateExcel({
+  required AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot,
+  required BuildContext context,
+}) async {
+  var dataSnapshot = snapshot.data!.docs;
+  var excel = Excel.createExcel();
+  Sheet sheet = excel['Sheet1'];
+
+  List<TextCellValue> header = [
+    TextCellValue("Tipe"),
+    TextCellValue("Wallet"),
+    TextCellValue("Title"),
+    TextCellValue("Kategori"),
+    TextCellValue("Total"),
+    TextCellValue("Waktu"),
+  ];
+  sheet.appendRow(header);
+
+  for (var doc in dataSnapshot) {
+    var data = doc.data();
+    sheet.appendRow([
+      TextCellValue(data["type"]),
+      TextCellValue(data["wallet"]),
+      TextCellValue(data["title"] ?? ""),
+      TextCellValue(data["kategori"] ?? ""),
+      TextCellValue(formatToRupiah(data["total"])),
+      TextCellValue(formatDateWithTime((data["time"] as Timestamp).toDate())),
+    ]);
+  }
+
+  String? outputPath = await FilePicker.platform.getDirectoryPath();
+  if (outputPath == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Penyimpanan dibatalkan."),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  String path = '$outputPath/CatatanFinansial.xlsx';
+  List<int> bytes = await excel.encode()!;
+  File file = File(path);
+  await file.writeAsBytes(bytes);
+
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(
+      "Excel telah tersimpan di $path",
+      style: TextStyle(fontSize: 14),
+    ),
+    backgroundColor: Colors.green,
+  ));
+}
+
+Future<String?> getDownloadDirectoryPath() async {
+  try {
+    final directory = await getExternalStorageDirectory();
+    final downloadDirectory = Directory('/storage/emulated/0/Download');
+    if (await downloadDirectory.exists()) {
+      return downloadDirectory.path;
+    } else {
+      return directory?.path;
+    }
+  } catch (e) {
+    print("Error getting download directory: $e");
+    return null;
   }
 }
