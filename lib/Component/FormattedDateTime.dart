@@ -11,3 +11,9 @@ String formatDateWithTime(DateTime dateTime) {
       DateFormat('EEEE, dd MMMM yyyy HH:mm:ss', 'id_ID').format(dateTime);
   return formattedDateTime;
 }
+
+String formatDateTimeWithoutDay(DateTime dateTime) {
+  final formattedDate =
+      DateFormat('dd MMMM yyyy', 'id_ID').format(dateTime);
+  return formattedDate;
+}

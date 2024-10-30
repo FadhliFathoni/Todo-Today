@@ -11,6 +11,7 @@ import 'package:todo_today/views/loginpage/LoginPage.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import "package:flutter_widgetkit/flutter_widgetkit.dart";
 
 Color PRIMARY_COLOR = Color.fromARGB(255, 164, 83, 56);
 Color BG_COLOR = Color.fromARGB(255, 193, 200, 192);
@@ -28,6 +29,7 @@ void main() async {
       'id', null); // Initialize for Indonesian locale
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(MyApp());
+  
 }
 
 class MyApp extends StatelessWidget {

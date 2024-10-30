@@ -464,18 +464,29 @@ Future<void> generateExcel({
     return;
   }
 
-  String path = '$outputPath/CatatanFinansial.xlsx';
+  DateTime now = DateTime.now();
+  String basePath =
+      '$outputPath/${now.year}-${now.month}-${now.day}-CatatanFinansial';
+
+  int counter = 0;
+  String filePath;
+  do {
+    counter++;
+    filePath = '$basePath${counter == 1 ? "" : "-$counter"}.xlsx';
+  } while (await File(filePath).exists());
+
   List<int> bytes = await excel.encode()!;
-  File file = File(path);
-  await file.writeAsBytes(bytes);
+  await File(filePath).writeAsBytes(bytes);
 
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
     content: Text(
-      "Excel telah tersimpan di $path",
+      "Excel telah tersimpan di $filePath",
       style: TextStyle(fontSize: 14),
     ),
     backgroundColor: Colors.green,
   ));
+
+  Navigator.pop(context);
 }
 
 Future<String?> getDownloadDirectoryPath() async {

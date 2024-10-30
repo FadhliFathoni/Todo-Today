@@ -63,8 +63,7 @@ class _ListwalletpageState extends State<Listwalletpage> {
                               (dataWallet["name"] != "Kebutuhan")
                                   ? formatToRupiah(dataWallet["amount"])
                                   : formatToRupiah(
-                                      dataWallet["maxAmount"] ??
-                                          0 - dataWallet["amount"],
+                                      dataWallet["maxAmount"] - dataWallet["amount"],
                                     ),
                               style: myTextStyle()),
                         ],
@@ -73,7 +72,7 @@ class _ListwalletpageState extends State<Listwalletpage> {
                         bottom: 12,
                         right: 12,
                         child: PopupMenuButton<String>(
-                          icon: Icon(Icons.settings),
+                          icon: Icon(Icons.more_vert_rounded),
                           onSelected: (value) {
                             if (value == "edit") {
                               var nameController = TextEditingController(

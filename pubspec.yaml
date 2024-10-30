@@ -57,6 +57,7 @@ dependencies:
   excel: ^4.0.6
   path_provider: ^2.1.5
   syncfusion_flutter_charts: ^27.1.57
+  flutter_widgetkit: ^1.0.3
 
 dev_dependencies:
   flutter_test:

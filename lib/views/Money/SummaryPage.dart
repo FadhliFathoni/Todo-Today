@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:todo_today/Component/FormattedDateTime.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 import 'package:intl/intl.dart';
@@ -14,13 +15,21 @@ class SummaryPage extends StatefulWidget {
 }
 
 class _SummaryPageState extends State<SummaryPage> {
-  int bulanKebelakang = 2;
+  int bulanKebelakang = 1;
   String selectedRange = "Per Bulan";
+
+  DateTime getDateTime() {
+    var now = DateTime.now();
+    if (selectedRange == "Per Bulan") {
+      return DateTime(now.year, (now.month - bulanKebelakang) - 1, now.day);
+    } else {
+      return now.subtract(Duration(days: bulanKebelakang + 1));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    DateTime now = DateTime.now();
-    DateTime dateLimit = DateTime(now.year, now.month - bulanKebelakang, 1);
+    DateTime dateLimit = getDateTime();
     var instance = FirebaseFirestore.instance;
     var collection = instance.collection("finance").doc(widget.user);
     var record = collection.collection("record");
@@ -83,9 +92,11 @@ class _SummaryPageState extends State<SummaryPage> {
                           backgroundColor: Colors.white,
                         ),
                         onPressed: () {
+                          // if (bulanKebelakang < 7) {
                           setState(() {
                             bulanKebelakang++;
                           });
+                          // }
                         },
                         child: Icon(
                           Icons.add,
@@ -96,12 +107,13 @@ class _SummaryPageState extends State<SummaryPage> {
                 DropdownButton<String>(
                   dropdownColor: Colors.white,
                   value: selectedRange,
+                  iconEnabledColor: PRIMARY_COLOR,
                   items: ["Per Bulan", "Per Hari"]
                       .map((range) => DropdownMenuItem(
                             value: range,
                             child: Text(
                               range,
-                              style: myTextStyle(),
+                              style: myTextStyle(color: PRIMARY_COLOR),
                             ),
                           ))
                       .toList(),
@@ -174,6 +186,9 @@ class _SummaryPageState extends State<SummaryPage> {
                     width: MediaQuery.of(context).size.width,
                     margin: EdgeInsets.symmetric(horizontal: 12),
                     child: SfCartesianChart(
+                      title: ChartTitle(
+                          text: "Pengeluaran",
+                          textStyle: myTextStyle(color: PRIMARY_COLOR)),
                       backgroundColor: Colors.white,
                       primaryXAxis: CategoryAxis(
                         labelStyle: myTextStyle(),
@@ -197,7 +212,207 @@ class _SummaryPageState extends State<SummaryPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      generateExcel(snapshot: snapshot, context: context);
+                      bool? semua = false;
+                      bool? pengeluaran = false;
+                      bool? pemasukan = false;
+                      DateTime? startDate;
+                      DateTime? endDate;
+                      showDialog(
+                        context: context,
+                        builder: (context) =>
+                            StatefulBuilder(builder: (context, dialogSetState) {
+                          return AlertDialog(
+                              backgroundColor: Colors.white,
+                              title: Center(
+                                  child: Text(
+                                "Export to Excel",
+                                style: myTextStyle(
+                                  color: PRIMARY_COLOR,
+                                  size: 18,
+                                ),
+                              )),
+                              content: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        activeColor: PRIMARY_COLOR,
+                                        value: pengeluaran,
+                                        onChanged: (data) {
+                                          dialogSetState(() {
+                                            pengeluaran = data!;
+                                          });
+                                        },
+                                      ),
+                                      Text(
+                                        "Pengeluaran",
+                                        style: myTextStyle(),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        activeColor: PRIMARY_COLOR,
+                                        value: pemasukan,
+                                        onChanged: (data) {
+                                          dialogSetState(() {
+                                            pemasukan = data!;
+                                          });
+                                        },
+                                      ),
+                                      Text(
+                                        "Pemasukan",
+                                        style: myTextStyle(),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Checkbox(
+                                        activeColor: PRIMARY_COLOR,
+                                        value: semua,
+                                        onChanged: (data) {
+                                          dialogSetState(() {
+                                            semua = data!;
+                                          });
+                                        },
+                                      ),
+                                      Text(
+                                        "Semua Transaksi",
+                                        style: myTextStyle(),
+                                      ),
+                                    ],
+                                  ),
+                                  Visibility(
+                                    visible: !semua!,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "Pilih Rentang Waktu",
+                                          style: myTextStyle(),
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Flexible(
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  DateTime? picked =
+                                                      await showDatePicker(
+                                                    context: context,
+                                                    initialDate: DateTime.now(),
+                                                    firstDate: DateTime(2000),
+                                                    lastDate: DateTime(2101),
+                                                  );
+                                                  if (picked != null) {
+                                                    dialogSetState(() {
+                                                      startDate = picked;
+                                                    });
+                                                  }
+                                                },
+                                                child: Container(
+                                                  padding: EdgeInsets.all(12),
+                                                  child: Center(
+                                                    child: Text(
+                                                      (startDate == null)
+                                                          ? "Start Date"
+                                                          : formatDateTimeWithoutDay(
+                                                              startDate!),
+                                                      style:
+                                                          myTextStyle(size: 14),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Text(
+                                              "-",
+                                              style: myTextStyle(size: 36),
+                                            ),
+                                            Flexible(
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  DateTime? picked =
+                                                      await showDatePicker(
+                                                    context: context,
+                                                    initialDate: DateTime.now(),
+                                                    firstDate: DateTime(2000),
+                                                    lastDate: DateTime(2101),
+                                                  );
+                                                  if (picked != null) {
+                                                    dialogSetState(() {
+                                                      endDate = picked;
+                                                    });
+                                                  }
+                                                },
+                                                child: Container(
+                                                  padding: EdgeInsets.all(12),
+                                                  child: Center(
+                                                    child: Text(
+                                                      (endDate == null)
+                                                          ? "End Date"
+                                                          : formatDateTimeWithoutDay(
+                                                              endDate!),
+                                                      style:
+                                                          myTextStyle(size: 14),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  StreamBuilder(
+                                      stream: generateSnapshot(record,
+                                          pengeluaran: pengeluaran!,
+                                          pemasukan: pemasukan!,
+                                          semua: semua!,
+                                          startDate: startDate,
+                                          endDate: endDate),
+                                      builder: (context, snapshotExport) {
+                                        return Container(
+                                          width:
+                                              MediaQuery.of(context).size.width,
+                                          child: ElevatedButton(
+                                              style: myElevatedButtonStyle(
+                                                backgroundColor: PRIMARY_COLOR,
+                                              ),
+                                              onPressed: () {
+                                                if (pengeluaran == false &&
+                                                    pemasukan == false) {
+                                                  return;
+                                                }
+                                                if (semua == false &&
+                                                    startDate == null &&
+                                                    endDate == null) {
+                                                  return;
+                                                }
+                                                generateExcel(
+                                                  snapshot: snapshotExport,
+                                                  context: context,
+                                                );
+                                              },
+                                              child: Text(
+                                                "Generate",
+                                                style: myTextStyle(
+                                                    color: Colors.white,
+                                                    size: 14),
+                                              )),
+                                        );
+                                      }),
+                                ],
+                              ));
+                        }),
+                      );
                     },
                     child: Container(
                       margin: EdgeInsets.all(12),
@@ -237,4 +452,31 @@ class ChartData {
   final double total;
 
   ChartData(this.month, this.total);
+}
+
+Stream<QuerySnapshot<Map<String, dynamic>>> generateSnapshot(
+    CollectionReference<Map<String, dynamic>> record,
+    {required bool pengeluaran,
+    required bool pemasukan,
+    required bool semua,
+    DateTime? startDate,
+    DateTime? endDate}) {
+  Query<Map<String, dynamic>> query = record;
+
+  if (pengeluaran == true && pemasukan == false) {
+    query = query.where("type", isEqualTo: "Pengeluaran");
+  } else if (pengeluaran == false && pemasukan == true) {
+    query = query.where("type", isEqualTo: "Pemasukan");
+  }
+
+if (semua == false && startDate != null && endDate != null) {
+  DateTime startOfDay = DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0);
+  DateTime endOfDay = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+  query = query
+      .where("time", isGreaterThan: startOfDay)
+      .where("time", isLessThan: endOfDay);
+}
+
+
+  return query.snapshots();
 }
