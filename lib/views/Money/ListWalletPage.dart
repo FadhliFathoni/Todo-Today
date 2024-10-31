@@ -63,7 +63,8 @@ class _ListwalletpageState extends State<Listwalletpage> {
                               (dataWallet["name"] != "Kebutuhan")
                                   ? formatToRupiah(dataWallet["amount"])
                                   : formatToRupiah(
-                                      dataWallet["maxAmount"] - dataWallet["amount"],
+                                      dataWallet["maxAmount"] -
+                                          dataWallet["amount"],
                                     ),
                               style: myTextStyle()),
                         ],
@@ -78,16 +79,33 @@ class _ListwalletpageState extends State<Listwalletpage> {
                               var nameController = TextEditingController(
                                   text: dataWallet["name"]);
                               var amountController = TextEditingController();
+                              var maxAmountController = TextEditingController();
 
-                              // Pastikan `amount` adalah angka, bersihkan dari karakter non-numerik terlebih dahulu
                               int amount = int.tryParse(
                                     dataWallet["amount"]
                                         .toString()
                                         .replaceAll(RegExp(r'[^0-9]'), ''),
                                   ) ??
                                   0;
+                              int maxAmount = 0;
 
-                              // Set nilai awal `amountController` dalam format rupiah
+                              if (dataWallet["name"] == "Kebutuhan") {
+                                maxAmount = int.tryParse(
+                                      dataWallet["maxAmount"]
+                                          .toString()
+                                          .replaceAll(RegExp(r'[^0-9]'), ''),
+                                    ) ??
+                                    0;
+                                maxAmountController.value = TextEditingValue(
+                                  text: formatToRupiah(maxAmount),
+                                  selection: TextSelection.fromPosition(
+                                    TextPosition(
+                                        offset:
+                                            formatToRupiah(maxAmount).length),
+                                  ),
+                                );
+                              }
+
                               amountController.value = TextEditingValue(
                                 text: formatToRupiah(amount),
                                 selection: TextSelection.fromPosition(
@@ -140,6 +158,31 @@ class _ListwalletpageState extends State<Listwalletpage> {
                                           );
                                         },
                                       ),
+                                      if (dataWallet["name"] == "Kebutuhan")
+                                        PrimaryTextField(
+                                          textInputType: TextInputType.number,
+                                          controller: maxAmountController,
+                                          hintText: formatToRupiah(
+                                              dataWallet["maxAmount"]),
+                                          onChanged: (data) {
+                                            int amount = int.tryParse(
+                                                  data.replaceAll(
+                                                      RegExp(r'[^0-9]'), ''),
+                                                ) ??
+                                                0;
+                                            maxAmountController.value =
+                                                TextEditingValue(
+                                              text: formatToRupiah(amount),
+                                              selection:
+                                                  TextSelection.fromPosition(
+                                                TextPosition(
+                                                    offset:
+                                                        formatToRupiah(amount)
+                                                            .length),
+                                              ),
+                                            );
+                                          },
+                                        ),
                                     ],
                                   ),
                                   actions: [
@@ -173,6 +216,9 @@ class _ListwalletpageState extends State<Listwalletpage> {
                                           "name": nameController.value.text,
                                           "amount": convertRupiahToInt(
                                               amountController.value.text),
+                                          if (dataWallet["name"] == "Kebutuhan")
+                                            "maxAmount": convertRupiahToInt(
+                                                maxAmountController.value.text),
                                           "time": DateTime.now(),
                                         });
                                         Navigator.pop(context);

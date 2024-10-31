@@ -161,152 +161,127 @@ class _FinancialpageState extends State<Financialpage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      PrimaryTextField(
+                        controller: titleController,
+                        hintText: (selectedType == "pengeluaran")
+                            ? "Buat apa?"
+                            : "Apah?",
+                        onChanged: (var data) {},
+                      ),
+                      PrimaryTextField(
+                        controller: totalController,
+                        hintText: "Berapa?",
+                        textInputType: TextInputType.number,
+                        onChanged: (var data) {
+                          int amount = int.tryParse(
+                                  data.replaceAll(RegExp(r'[^0-9]'), '')) ??
+                              0;
+                          totalController.value = TextEditingValue(
+                            text: formatToRupiah(amount),
+                            selection: TextSelection.fromPosition(
+                              TextPosition(
+                                offset: formatToRupiah(amount).length,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      // Visibility(
+                      //   visible: (selectedKategori == "Belanja Online"),
+                      //   child: PrimaryTextField(
+                      //     controller: linkController,
+                      //     hintText: "Ada linknya ngga? (Opsional)",
+                      //     onChanged: (data) {},
+                      //   ),
+                      // ),
                       Visibility(
-                        visible: selectedType == "pengeluaran",
-                        replacement: Column(
-                          children: [
-                            PrimaryTextField(
-                              controller: totalController,
-                              hintText: "Berapa?",
-                              textInputType: TextInputType.number,
-                              onChanged: (var data) {
-                                int amount = int.tryParse(data.replaceAll(
-                                        RegExp(r'[^0-9]'), '')) ??
-                                    0;
-                                totalController.value = TextEditingValue(
-                                  text: formatToRupiah(amount),
-                                  selection: TextSelection.fromPosition(
-                                    TextPosition(
-                                      offset: formatToRupiah(amount).length,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            PrimaryTextField(
-                              controller: titleController,
-                              hintText: "Buat apa?",
-                              onChanged: (var data) {},
-                            ),
-                            PrimaryTextField(
-                              controller: totalController,
-                              hintText: "Berapa?",
-                              textInputType: TextInputType.number,
-                              onChanged: (var data) {
-                                int amount = int.tryParse(data.replaceAll(
-                                        RegExp(r'[^0-9]'), '')) ??
-                                    0;
-                                totalController.value = TextEditingValue(
-                                  text: formatToRupiah(amount),
-                                  selection: TextSelection.fromPosition(
-                                    TextPosition(
-                                      offset: formatToRupiah(amount).length,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            // Visibility(
-                            //   visible: (selectedKategori == "Belanja Online"),
-                            //   child: PrimaryTextField(
-                            //     controller: linkController,
-                            //     hintText: "Ada linknya ngga? (Opsional)",
-                            //     onChanged: (data) {},
-                            //   ),
-                            // ),
-                            StreamBuilder(
-                              stream: kategori.snapshots(),
-                              builder: (context, snapshot) {
-                                if (!snapshot.hasData) {
-                                  return Container();
-                                }
-                                var items = [
-                                  DropdownMenuItem<String>(
-                                    value: "tambah_kategori",
-                                    child: Text(
-                                      "Tambah Kategori",
-                                      style: myTextStyle(color: PRIMARY_COLOR),
-                                    ),
-                                  ),
-                                  ...snapshot.data!.docs
-                                      .map<DropdownMenuItem<String>>((doc) {
-                                    return DropdownMenuItem<String>(
-                                      value: doc['name'],
-                                      child: Text(
-                                        doc['name'],
-                                        style: myTextStyle(),
-                                      ),
-                                    );
-                                  }).toList()
-                                ];
-                                return DropdownButton<String>(
-                                  dropdownColor: Colors.white,
-                                  style: myTextStyle(),
-                                  iconEnabledColor: PRIMARY_COLOR,
-                                  items: items,
-                                  value: selectedKategori,
-                                  onChanged: (value) {
-                                    dialogSetState(() {
-                                      selectedKategori = value;
-                                    });
-                                    if (selectedKategori == "tambah_kategori") {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          backgroundColor: Colors.white,
-                                          title: Center(
-                                            child: Text(
-                                              "Nambahin Kategori",
-                                              style: myTextStyle(
-                                                color: PRIMARY_COLOR,
-                                                size: 18,
-                                              ),
-                                            ),
-                                          ),
-                                          content: PrimaryTextField(
-                                            controller: kategoriController,
-                                            hintText: "Kategori apah",
-                                            onChanged: (data) {},
-                                          ),
-                                          actions: [
-                                            ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.white,
-                                              ),
-                                              onPressed: () {
-                                                kategori.add({
-                                                  "name": kategoriController
-                                                      .value.text,
-                                                  "time": DateTime.now(),
-                                                });
-                                                dialogSetState(() {});
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                "Syudah",
-                                                style: myTextStyle(
-                                                  color: PRIMARY_COLOR,
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  hint: Text(
-                                    "Pilih Kategori",
+                        visible: (selectedType == "pengeluaran"),
+                        child: StreamBuilder(
+                          stream: kategori.snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return Container();
+                            }
+                            var items = [
+                              DropdownMenuItem<String>(
+                                value: "tambah_kategori",
+                                child: Text(
+                                  "Tambah Kategori",
+                                  style: myTextStyle(color: PRIMARY_COLOR),
+                                ),
+                              ),
+                              ...snapshot.data!.docs
+                                  .map<DropdownMenuItem<String>>((doc) {
+                                return DropdownMenuItem<String>(
+                                  value: doc['name'],
+                                  child: Text(
+                                    doc['name'],
                                     style: myTextStyle(),
                                   ),
                                 );
+                              }).toList()
+                            ];
+                            return DropdownButton<String>(
+                              dropdownColor: Colors.white,
+                              style: myTextStyle(),
+                              iconEnabledColor: PRIMARY_COLOR,
+                              items: items,
+                              value: selectedKategori,
+                              onChanged: (value) {
+                                dialogSetState(() {
+                                  selectedKategori = value;
+                                });
+                                if (selectedKategori == "tambah_kategori") {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      backgroundColor: Colors.white,
+                                      title: Center(
+                                        child: Text(
+                                          "Nambahin Kategori",
+                                          style: myTextStyle(
+                                            color: PRIMARY_COLOR,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                      content: PrimaryTextField(
+                                        controller: kategoriController,
+                                        hintText: "Kategori apah",
+                                        onChanged: (data) {},
+                                      ),
+                                      actions: [
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                          ),
+                                          onPressed: () {
+                                            kategori.add({
+                                              "name":
+                                                  kategoriController.value.text,
+                                              "time": DateTime.now(),
+                                            });
+                                            dialogSetState(() {});
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            "Syudah",
+                                            style: myTextStyle(
+                                              color: PRIMARY_COLOR,
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                }
                               },
-                            ),
-                          ],
+                              hint: Text(
+                                "Pilih Kategori",
+                                style: myTextStyle(),
+                              ),
+                            );
+                          },
                         ),
                       ),
                       StreamBuilder(
@@ -370,31 +345,31 @@ class _FinancialpageState extends State<Financialpage> {
                                 ),
                                 onPressed: () {
                                   int totalAmount = 0;
-                                  if (titleController.value.text.isNotEmpty &&
+                                  if (selectedType == "pengeluaran" &&
+                                      titleController.value.text.isNotEmpty &&
                                       selectedKategori != null &&
                                       totalController.value.text.isNotEmpty &&
                                       selectedWallet != null) {
                                     totalAmount = convertRupiahToInt(
                                         totalController.value.text);
-                                    if (selectedType == "pengeluaran") {
-                                      record.add({
-                                        "title": titleController.value.text,
-                                        "kategori": selectedKategori,
-                                        "time": selectedDateTime,
-                                        "total": totalAmount,
-                                        "type": "Pengeluaran",
-                                        "wallet": selectedWallet,
-                                        // "link": (selectedKategori ==
-                                        //         "Belanja Online")
-                                        //     ? linkController.value.text
-                                        //     : "",
-                                      });
-                                    }
+                                    record.add({
+                                      "title": titleController.value.text,
+                                      "kategori": selectedKategori,
+                                      "time": selectedDateTime,
+                                      "total": totalAmount,
+                                      "type": "Pengeluaran",
+                                      "wallet": selectedWallet,
+                                      // "link": (selectedKategori ==
+                                      //         "Belanja Online")
+                                      //     ? linkController.value.text
+                                      //     : "",
+                                    });
                                   } else if (selectedType == "pemasukan" &&
                                       totalController.value.text.isNotEmpty) {
                                     totalAmount = convertRupiahToInt(
                                         totalController.value.text);
                                     record.add({
+                                      "title": titleController.value.text,
                                       "time": selectedDateTime,
                                       "total": totalAmount,
                                       "type": "Pemasukan",
@@ -402,6 +377,9 @@ class _FinancialpageState extends State<Financialpage> {
                                     });
                                   }
                                   if (totalAmount != 0) {
+                                    print("SELECTEDTYPE " + selectedType);
+                                    print("titleController " +
+                                        titleController.value.text);
                                     updateAmount(
                                       selectedWallet:
                                           selectedWallet!.toLowerCase(),
