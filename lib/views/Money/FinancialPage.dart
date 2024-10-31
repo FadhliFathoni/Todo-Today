@@ -345,6 +345,7 @@ class _FinancialpageState extends State<Financialpage> {
                                 ),
                                 onPressed: () {
                                   int totalAmount = 0;
+                                  bool isSucces = false;
                                   if (selectedType == "pengeluaran" &&
                                       titleController.value.text.isNotEmpty &&
                                       selectedKategori != null &&
@@ -363,6 +364,8 @@ class _FinancialpageState extends State<Financialpage> {
                                       //         "Belanja Online")
                                       //     ? linkController.value.text
                                       //     : "",
+                                    }).then((_) {
+                                      isSucces = true;
                                     });
                                   } else if (selectedType == "pemasukan" &&
                                       totalController.value.text.isNotEmpty) {
@@ -374,12 +377,11 @@ class _FinancialpageState extends State<Financialpage> {
                                       "total": totalAmount,
                                       "type": "Pemasukan",
                                       "wallet": selectedWallet,
+                                    }).then((_) {
+                                      isSucces = true;
                                     });
                                   }
-                                  if (totalAmount != 0) {
-                                    print("SELECTEDTYPE " + selectedType);
-                                    print("titleController " +
-                                        titleController.value.text);
+                                  if (totalAmount != 0 && isSucces) {
                                     updateAmount(
                                       selectedWallet:
                                           selectedWallet!.toLowerCase(),

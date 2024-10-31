@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:todo_today/Component/FormattedDateTime.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/main.dart';
@@ -157,13 +158,10 @@ class FinancialTile1 extends StatelessWidget {
                 style: myTextStyle(size: 18, color: PRIMARY_COLOR),
               ),
             ),
-            content: Visibility(
-              visible: !isIncome,
-              child: PrimaryTextField(
-                  controller: titleController,
-                  hintText: (!isIncome) ? dataMap["title"] : "",
-                  onChanged: (data) {}),
-            ),
+            content: PrimaryTextField(
+                controller: titleController,
+                hintText: (!isIncome) ? dataMap["title"] : "",
+                onChanged: (data) {}),
             actions: [
               StreamBuilder(
                   stream: wallet.snapshots(),
@@ -172,16 +170,19 @@ class FinancialTile1 extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white),
                         onPressed: () {
-                          record.doc(data.id).delete();
-                          updateAmount(
-                            selectedWallet:
-                                dataMap["wallet"].toString().toLowerCase(),
-                            selectedType:
-                                dataMap["type"].toString().toLowerCase(),
-                            totalAmount: dataMap["total"],
-                            snapshot: snapshot,
-                            wallet: wallet,
-                            isDelete: true,
+                          record.doc(data.id).delete().then(
+                            (_) {
+                              updateAmount(
+                                selectedWallet:
+                                    dataMap["wallet"].toString().toLowerCase(),
+                                selectedType:
+                                    dataMap["type"].toString().toLowerCase(),
+                                totalAmount: dataMap["total"],
+                                snapshot: snapshot,
+                                wallet: wallet,
+                                isDelete: true,
+                              );
+                            },
                           );
                           Navigator.pop(context);
                         },
@@ -190,25 +191,21 @@ class FinancialTile1 extends StatelessWidget {
                           style: myTextStyle(color: PRIMARY_COLOR),
                         ));
                   }),
-              Visibility(
-                visible: !isIncome,
-                child: ElevatedButton(
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: PRIMARY_COLOR),
-                  onPressed: () {
-                    record.doc(data.id).set({
-                      "title": titleController.value.text,
-                      "wallet": dataMap["wallet"],
-                      "type": dataMap["type"],
-                      "total": dataMap["total"],
-                      "time": dataMap["time"],
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    "Syudah",
-                    style: myTextStyle(color: Colors.white),
-                  ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: PRIMARY_COLOR),
+                onPressed: () {
+                  record.doc(data.id).set({
+                    "title": titleController.value.text,
+                    "wallet": dataMap["wallet"],
+                    "type": dataMap["type"],
+                    "total": dataMap["total"],
+                    "time": dataMap["time"],
+                  });
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  "Syudah",
+                  style: myTextStyle(color: Colors.white),
                 ),
               ),
             ],
@@ -453,20 +450,26 @@ Future<void> generateExcel({
     ]);
   }
 
-  String? outputPath = await FilePicker.platform.getDirectoryPath();
-  if (outputPath == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Penyimpanan dibatalkan."),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
+  Directory? outputDirectory;
+  if (Platform.isAndroid && await Permission.manageExternalStorage.isGranted) {
+    outputDirectory = await getExternalStorageDirectory();
+  } else {
+    String? outputPath = await FilePicker.platform.getDirectoryPath();
+    if (outputPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Penyimpanan dibatalkan."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    outputDirectory = Directory(outputPath);
   }
 
   DateTime now = DateTime.now();
   String basePath =
-      '$outputPath/${now.year}-${now.month}-${now.day}-CatatanFinansial';
+      '${outputDirectory!.path}/${now.year}-${now.month}-${now.day}-CatatanFinansial';
 
   int counter = 0;
   String filePath;
@@ -503,3 +506,32 @@ Future<String?> getDownloadDirectoryPath() async {
     return null;
   }
 }
+
+// bool isRequestingPermission =
+//     false; // Tambahkan flag untuk memantau status izin
+
+// Future<void> requestStoragePermission() async {
+//   if (isRequestingPermission)
+//     return; // Cegah permintaan baru jika ada yang berjalan
+
+//   isRequestingPermission = true; // Set flag sebelum memulai request
+//   try {
+//     var status = await Permission.storage.status;
+
+//     if (!status.isGranted) {
+//       status = await Permission.storage.request();
+
+//       if (status.isGranted) {
+//         print("Izin penyimpanan diberikan.");
+//       } else if (status.isDenied) {
+//         print("Izin penyimpanan ditolak.");
+//       } else if (status.isPermanentlyDenied) {
+//         openAppSettings();
+//       }
+//     } else {
+//       print("Izin penyimpanan sudah diberikan sebelumnya.");
+//     }
+//   } finally {
+//     isRequestingPermission = false; // Reset flag setelah request selesai
+//   }
+// }

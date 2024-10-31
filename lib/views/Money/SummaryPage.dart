@@ -231,185 +231,193 @@ class _SummaryPageState extends State<SummaryPage> {
                                   size: 18,
                                 ),
                               )),
-                              content: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Checkbox(
-                                        activeColor: PRIMARY_COLOR,
-                                        value: pengeluaran,
-                                        onChanged: (data) {
-                                          dialogSetState(() {
-                                            pengeluaran = data!;
-                                          });
-                                        },
-                                      ),
-                                      Text(
-                                        "Pengeluaran",
-                                        style: myTextStyle(),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Checkbox(
-                                        activeColor: PRIMARY_COLOR,
-                                        value: pemasukan,
-                                        onChanged: (data) {
-                                          dialogSetState(() {
-                                            pemasukan = data!;
-                                          });
-                                        },
-                                      ),
-                                      Text(
-                                        "Pemasukan",
-                                        style: myTextStyle(),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Checkbox(
-                                        activeColor: PRIMARY_COLOR,
-                                        value: semua,
-                                        onChanged: (data) {
-                                          dialogSetState(() {
-                                            semua = data!;
-                                          });
-                                        },
-                                      ),
-                                      Text(
-                                        "Semua Transaksi",
-                                        style: myTextStyle(),
-                                      ),
-                                    ],
-                                  ),
-                                  Visibility(
-                                    visible: !semua!,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
+                              content: AnimatedSize(
+                                duration: Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
                                       children: [
-                                        Text(
-                                          "Pilih Rentang Waktu",
-                                          style: myTextStyle(),
+                                        Checkbox(
+                                          activeColor: PRIMARY_COLOR,
+                                          value: pengeluaran,
+                                          onChanged: (data) {
+                                            dialogSetState(() {
+                                              pengeluaran = data!;
+                                            });
+                                          },
                                         ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Flexible(
-                                              child: GestureDetector(
-                                                onTap: () async {
-                                                  DateTime? picked =
-                                                      await showDatePicker(
-                                                    context: context,
-                                                    initialDate: DateTime.now(),
-                                                    firstDate: DateTime(2000),
-                                                    lastDate: DateTime(2101),
-                                                  );
-                                                  if (picked != null) {
-                                                    dialogSetState(() {
-                                                      startDate = picked;
-                                                    });
-                                                  }
-                                                },
-                                                child: Container(
-                                                  padding: EdgeInsets.all(12),
-                                                  child: Center(
-                                                    child: Text(
-                                                      (startDate == null)
-                                                          ? "Start Date"
-                                                          : formatDateTimeWithoutDay(
-                                                              startDate!),
-                                                      style:
-                                                          myTextStyle(size: 14),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Text(
-                                              "-",
-                                              style: myTextStyle(size: 36),
-                                            ),
-                                            Flexible(
-                                              child: GestureDetector(
-                                                onTap: () async {
-                                                  DateTime? picked =
-                                                      await showDatePicker(
-                                                    context: context,
-                                                    initialDate: DateTime.now(),
-                                                    firstDate: DateTime(2000),
-                                                    lastDate: DateTime(2101),
-                                                  );
-                                                  if (picked != null) {
-                                                    dialogSetState(() {
-                                                      endDate = picked;
-                                                    });
-                                                  }
-                                                },
-                                                child: Container(
-                                                  padding: EdgeInsets.all(12),
-                                                  child: Center(
-                                                    child: Text(
-                                                      (endDate == null)
-                                                          ? "End Date"
-                                                          : formatDateTimeWithoutDay(
-                                                              endDate!),
-                                                      style:
-                                                          myTextStyle(size: 14),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                        Text(
+                                          "Pengeluaran",
+                                          style: myTextStyle(),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  StreamBuilder(
-                                      stream: generateSnapshot(record,
-                                          pengeluaran: pengeluaran!,
-                                          pemasukan: pemasukan!,
-                                          semua: semua!,
-                                          startDate: startDate,
-                                          endDate: endDate),
-                                      builder: (context, snapshotExport) {
-                                        return Container(
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          child: ElevatedButton(
-                                              style: myElevatedButtonStyle(
-                                                backgroundColor: PRIMARY_COLOR,
+                                    Row(
+                                      children: [
+                                        Checkbox(
+                                          activeColor: PRIMARY_COLOR,
+                                          value: pemasukan,
+                                          onChanged: (data) {
+                                            dialogSetState(() {
+                                              pemasukan = data!;
+                                            });
+                                          },
+                                        ),
+                                        Text(
+                                          "Pemasukan",
+                                          style: myTextStyle(),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Checkbox(
+                                          activeColor: PRIMARY_COLOR,
+                                          value: semua,
+                                          onChanged: (data) {
+                                            dialogSetState(() {
+                                              semua = data!;
+                                            });
+                                          },
+                                        ),
+                                        Text(
+                                          "Semua Transaksi",
+                                          style: myTextStyle(),
+                                        ),
+                                      ],
+                                    ),
+                                    Visibility(
+                                      visible: !semua!,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            "Pilih Rentang Waktu",
+                                            style: myTextStyle(),
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Flexible(
+                                                child: GestureDetector(
+                                                  onTap: () async {
+                                                    DateTime? picked =
+                                                        await showDatePicker(
+                                                      context: context,
+                                                      initialDate:
+                                                          DateTime.now(),
+                                                      firstDate: DateTime(2000),
+                                                      lastDate: DateTime(2101),
+                                                    );
+                                                    if (picked != null) {
+                                                      dialogSetState(() {
+                                                        startDate = picked;
+                                                      });
+                                                    }
+                                                  },
+                                                  child: Container(
+                                                    padding: EdgeInsets.all(12),
+                                                    child: Center(
+                                                      child: Text(
+                                                        (startDate == null)
+                                                            ? "Start Date"
+                                                            : formatDateTimeWithoutDay(
+                                                                startDate!),
+                                                        style: myTextStyle(
+                                                            size: 14),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
                                               ),
-                                              onPressed: () {
-                                                if (pengeluaran == false &&
-                                                    pemasukan == false) {
-                                                  return;
-                                                }
-                                                if (semua == false &&
-                                                    startDate == null &&
-                                                    endDate == null) {
-                                                  return;
-                                                }
-                                                generateExcel(
-                                                  snapshot: snapshotExport,
-                                                  context: context,
-                                                );
-                                              },
-                                              child: Text(
-                                                "Generate",
-                                                style: myTextStyle(
-                                                    color: Colors.white,
-                                                    size: 14),
-                                              )),
-                                        );
-                                      }),
-                                ],
+                                              Text(
+                                                "-",
+                                                style: myTextStyle(size: 36),
+                                              ),
+                                              Flexible(
+                                                child: GestureDetector(
+                                                  onTap: () async {
+                                                    DateTime? picked =
+                                                        await showDatePicker(
+                                                      context: context,
+                                                      initialDate:
+                                                          DateTime.now(),
+                                                      firstDate: DateTime(2000),
+                                                      lastDate: DateTime(2101),
+                                                    );
+                                                    if (picked != null) {
+                                                      dialogSetState(() {
+                                                        endDate = picked;
+                                                      });
+                                                    }
+                                                  },
+                                                  child: Container(
+                                                    padding: EdgeInsets.all(12),
+                                                    child: Center(
+                                                      child: Text(
+                                                        (endDate == null)
+                                                            ? "End Date"
+                                                            : formatDateTimeWithoutDay(
+                                                                endDate!),
+                                                        style: myTextStyle(
+                                                            size: 14),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    StreamBuilder(
+                                        stream: generateSnapshot(record,
+                                            pengeluaran: pengeluaran!,
+                                            pemasukan: pemasukan!,
+                                            semua: semua!,
+                                            startDate: startDate,
+                                            endDate: endDate),
+                                        builder: (context, snapshotExport) {
+                                          return Container(
+                                            width: MediaQuery.of(context)
+                                                .size
+                                                .width,
+                                            child: ElevatedButton(
+                                                style: myElevatedButtonStyle(
+                                                  backgroundColor:
+                                                      PRIMARY_COLOR,
+                                                ),
+                                                onPressed: () {
+                                                  if (pengeluaran == false &&
+                                                      pemasukan == false) {
+                                                    return;
+                                                  }
+                                                  if (semua == false &&
+                                                      startDate == null &&
+                                                      endDate == null) {
+                                                    return;
+                                                  }
+                                                  generateExcel(
+                                                    snapshot: snapshotExport,
+                                                    context: context,
+                                                  );
+                                                },
+                                                child: Text(
+                                                  "Generate",
+                                                  style: myTextStyle(
+                                                      color: Colors.white,
+                                                      size: 14),
+                                                )),
+                                          );
+                                        }),
+                                  ],
+                                ),
                               ));
                         }),
                       );
@@ -469,14 +477,15 @@ Stream<QuerySnapshot<Map<String, dynamic>>> generateSnapshot(
     query = query.where("type", isEqualTo: "Pemasukan");
   }
 
-if (semua == false && startDate != null && endDate != null) {
-  DateTime startOfDay = DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0);
-  DateTime endOfDay = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
-  query = query
-      .where("time", isGreaterThan: startOfDay)
-      .where("time", isLessThan: endOfDay);
-}
-
+  if (semua == false && startDate != null && endDate != null) {
+    DateTime startOfDay =
+        DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0);
+    DateTime endOfDay =
+        DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+    query = query
+        .where("time", isGreaterThan: startOfDay)
+        .where("time", isLessThan: endOfDay);
+  }
 
   return query.snapshots();
 }

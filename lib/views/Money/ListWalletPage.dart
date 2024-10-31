@@ -14,6 +14,7 @@ class Listwalletpage extends StatefulWidget {
 
 class _ListwalletpageState extends State<Listwalletpage> {
   bool tabunganExist = false;
+  List<String> walletUtama = ["Kebutuhan", "Dana Darurat", "Tabungan"];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,6 +132,10 @@ class _ListwalletpageState extends State<Listwalletpage> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       PrimaryTextField(
+                                        enabled: (walletUtama
+                                                .contains(dataWallet["name"]))
+                                            ? false
+                                            : true,
                                         controller: nameController,
                                         hintText: dataWallet["name"],
                                         onChanged: (data) {},
@@ -190,12 +195,71 @@ class _ListwalletpageState extends State<Listwalletpage> {
                                       style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.white),
                                       onPressed: () {
-                                        resetWallet(
-                                          wallet: widget.wallet,
-                                          snapshot: snapshot,
-                                          selectedWallet: dataWallet["name"],
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            backgroundColor: Colors.white,
+                                            title: Center(
+                                              child: Text(
+                                                "Yakin mau reset?",
+                                                style: myTextStyle(
+                                                  size: 18,
+                                                  color: Colors.red
+                                                      .withOpacity(0.7),
+                                                ),
+                                              ),
+                                            ),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  "Ketik dulu : " +
+                                                      dataWallet["name"],
+                                                  style: myTextStyle(),
+                                                ),
+                                                PrimaryTextField(
+                                                  controller: nameController,
+                                                  hintText: dataWallet["name"],
+                                                  onChanged: (data) {},
+                                                ),
+                                              ],
+                                            ),
+                                            actions: [
+                                              Container(
+                                                width: MediaQuery.of(context)
+                                                    .size
+                                                    .width,
+                                                child: ElevatedButton(
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.white,
+                                                    foregroundColor: Colors.red,
+                                                  ),
+                                                  onPressed: () {
+                                                    if (nameController
+                                                            .value.text ==
+                                                        dataWallet["name"]) {
+                                                      resetWallet(
+                                                        wallet: widget.wallet,
+                                                        snapshot: snapshot,
+                                                        selectedWallet:
+                                                            dataWallet["name"],
+                                                      );
+                                                      Navigator.pop(context);
+                                                    }
+                                                  },
+                                                  child: Text(
+                                                    "Reset ajah",
+                                                    style: myTextStyle(
+                                                        color: Colors.red
+                                                            .withOpacity(0.7)),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         );
-                                        Navigator.pop(context);
                                       },
                                       child: Text(
                                         "Reset",

@@ -8,6 +8,7 @@ class PrimaryTextField extends StatelessWidget {
   final String hintText;
   TextInputType? textInputType = TextInputType.text;
   final void Function(String) onChanged;
+  bool? enabled;
 
   PrimaryTextField(
       {super.key,
@@ -16,13 +17,14 @@ class PrimaryTextField extends StatelessWidget {
       this.maxLine,
       required this.hintText,
       required this.onChanged,
-      this.textInputType});
+      this.textInputType, this.enabled,});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 55,
       child: TextField(
+        enabled: enabled ?? true,
         keyboardType: textInputType,
         onChanged: onChanged,
         controller: controller,
