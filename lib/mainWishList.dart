@@ -13,6 +13,7 @@ import 'package:todo_today/Component/FirebasePicture.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/main.dart';
+import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 
 class Mainwishlist extends StatefulWidget {
   const Mainwishlist({super.key});
@@ -27,7 +28,6 @@ class _MainwishlistState extends State<Mainwishlist>
 
   @override
   void dispose() {
-    // Dispose controllers when no longer needed
     super.dispose();
   }
 
@@ -51,12 +51,9 @@ class _MainwishlistState extends State<Mainwishlist>
         ),
         backgroundColor: Colors.white,
         elevation: 5,
-        title: GestureDetector(
-          onTap: () {},
-          child: Text(
-            "Wish List Kita",
-            style: TextStyle(fontFamily: PRIMARY_FONT, color: PRIMARY_COLOR),
-          ),
+        title: Text(
+          "Wish List Kita",
+          style: TextStyle(fontFamily: PRIMARY_FONT, color: PRIMARY_COLOR),
         ),
         centerTitle: true,
       ),
@@ -75,6 +72,8 @@ class _MainwishlistState extends State<Mainwishlist>
             currentIndex = value;
           });
         },
+        selectedLabelStyle: myTextStyle(),
+        unselectedLabelStyle: myTextStyle(),
         items: [
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border), label: "Wishlist"),
@@ -124,6 +123,7 @@ class _WishListState extends State<WishList> {
               context: context,
               builder: (context) {
                 return AlertDialog(
+                  backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -314,6 +314,7 @@ class _WishListState extends State<WishList> {
                         );
                       },
                       child: Card(
+                        color: Colors.white,
                         margin:
                             EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                         shape: RoundedRectangleBorder(
@@ -347,6 +348,7 @@ class _WishListState extends State<WishList> {
                               TextEditingController ceritaController =
                                   TextEditingController();
                               showDialog(
+                                barrierDismissible: false,
                                 context: context,
                                 builder: (context) {
                                   return StatefulBuilder(
@@ -507,12 +509,12 @@ class _WishListState extends State<WishList> {
                       ),
                     );
                   } else {
-                    return Container(); // This should not be reached since we are filtering by status
+                    return Container();
                   }
                 },
               );
             } else {
-              return Container(); // This case should not be reached due to previous checks
+              return Container();
             }
           },
         ));
@@ -593,7 +595,7 @@ class _WishListDoneState extends State<WishListDone> {
                     return DraggableScrollableSheet(
                       initialChildSize: 0.5,
                       minChildSize: 0.3,
-                      maxChildSize: 1.0, // Allow full screen
+                      maxChildSize: 1.0,
                       expand: true,
                       builder: (BuildContext context,
                           ScrollController scrollController) {
@@ -670,6 +672,7 @@ class _WishListDoneState extends State<WishListDone> {
                 );
               },
               child: Card(
+                color: Colors.white,
                 margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),

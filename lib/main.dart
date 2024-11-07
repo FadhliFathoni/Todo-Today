@@ -29,7 +29,6 @@ void main() async {
       'id', null); // Initialize for Indonesian locale
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(MyApp());
-  
 }
 
 class MyApp extends StatelessWidget {
@@ -116,6 +115,7 @@ class _MainPageState extends State<MainPage> {
       ),
       body: buildBody(),
       bottomNavigationBar: BottomNavigationBar(
+          backgroundColor: Colors.white,
           selectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
           unselectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
           currentIndex: currentIndex,

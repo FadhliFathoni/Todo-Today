@@ -200,7 +200,10 @@ class FinancialTile1 extends StatelessWidget {
                     "type": dataMap["type"],
                     "total": dataMap["total"],
                     "time": dataMap["time"],
+                    if (dataMap["type"] != "Pemasukan")
+                      "kategori": dataMap["kategori"]
                   });
+
                   Navigator.pop(context);
                 },
                 child: Text(
@@ -218,55 +221,70 @@ class FinancialTile1 extends StatelessWidget {
           color: Colors.white,
         ),
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        height: 80,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration:
-                      BoxDecoration(color: BG_COLOR, shape: BoxShape.circle),
-                  child: Text(formatTimeOnly(dataMap["time"]),
-                      style: myTextStyle(
-                        size: 14,
-                        fontWeight: FontWeight.bold,
-                      )),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        child: IntrinsicHeight(
+          // Wrap with IntrinsicHeight to adapt to content height
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
                   children: [
-                    Text(
-                      title,
-                      style: myTextStyle(
-                        size: 18,
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                          color: BG_COLOR, shape: BoxShape.circle),
+                      child: Text(
+                        formatTimeOnly(dataMap["time"]),
+                        style: myTextStyle(
+                          size: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    if (dataMap["type"] == "Pengeluaran")
-                      Text(
-                        dataMap["kategori"],
-                        style: myTextStyle(),
-                      )
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: myTextStyle(size: 18),
+                            maxLines: 2, // Allow text to wrap to new lines
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (dataMap["type"] == "Pengeluaran")
+                            Text(
+                              dataMap["kategori"] ?? "",
+                              style: myTextStyle(),
+                              maxLines: 2, // Allow text to wrap to new lines
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ],
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  totalAmount,
-                  style: myTextStyle(
-                      color: (isIncome) ? Colors.green : Colors.red, size: 16),
-                ),
-                Text(dataMap["wallet"],
-                    style: myTextStyle(fontWeight: FontWeight.normal))
-              ],
-            ),
-          ],
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    totalAmount,
+                    style: myTextStyle(
+                      color: (isIncome) ? Colors.green : Colors.red,
+                      size: 16,
+                    ),
+                  ),
+                  Text(
+                    dataMap["wallet"],
+                    style: myTextStyle(fontWeight: FontWeight.normal),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
