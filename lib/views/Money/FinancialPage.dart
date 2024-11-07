@@ -33,18 +33,18 @@ class _FinancialpageState extends State<Financialpage> {
   DateTime selectedDateTime = DateTime.now();
 
   Future<void> selectDateTime(BuildContext context,
-      {required void Function(void Function()) dialogSetState}) async {
+      {required void Function(void Function()) dialogSetState,
+      required DateTime dateInput}) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedDateTime,
+      initialDate: dateInput,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
 
     if (pickedDate != null) {
       final TimeOfDay? pickedTime = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay.fromDateTime(selectedDateTime));
+          context: context, initialTime: TimeOfDay.fromDateTime(dateInput));
 
       if (pickedTime != null) {
         dialogSetState(() {
@@ -74,6 +74,7 @@ class _FinancialpageState extends State<Financialpage> {
         shape: CircleBorder(),
         backgroundColor: Colors.white,
         onPressed: () {
+          DateTime dateInput = DateTime.now();
           selectedKategori = "Jajan";
           var titleController = TextEditingController();
           var totalController = TextEditingController();
@@ -324,6 +325,7 @@ class _FinancialpageState extends State<Financialpage> {
                             selectDateTime(
                               context,
                               dialogSetState: dialogSetState,
+                              dateInput: dateInput,
                             );
                           },
                           child: Text(
@@ -345,7 +347,6 @@ class _FinancialpageState extends State<Financialpage> {
                                 ),
                                 onPressed: () {
                                   int totalAmount = 0;
-                                  bool isSucces = false;
                                   if (selectedType == "pengeluaran" &&
                                       titleController.value.text.isNotEmpty &&
                                       selectedKategori != null &&
@@ -364,8 +365,6 @@ class _FinancialpageState extends State<Financialpage> {
                                       //         "Belanja Online")
                                       //     ? linkController.value.text
                                       //     : "",
-                                    }).then((_) {
-                                      isSucces = true;
                                     });
                                   } else if (selectedType == "pemasukan" &&
                                       totalController.value.text.isNotEmpty) {
@@ -377,11 +376,9 @@ class _FinancialpageState extends State<Financialpage> {
                                       "total": totalAmount,
                                       "type": "Pemasukan",
                                       "wallet": selectedWallet,
-                                    }).then((_) {
-                                      isSucces = true;
                                     });
                                   }
-                                  if (totalAmount != 0 && isSucces) {
+                                  if (totalAmount != 0) {
                                     updateAmount(
                                       selectedWallet:
                                           selectedWallet!.toLowerCase(),

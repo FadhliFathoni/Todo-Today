@@ -406,6 +406,7 @@ class _SummaryPageState extends State<SummaryPage> {
                                                   generateExcel(
                                                     snapshot: snapshotExport,
                                                     context: context,
+                                                    user: widget.user,
                                                   );
                                                 },
                                                 child: Text(
@@ -487,5 +488,5 @@ Stream<QuerySnapshot<Map<String, dynamic>>> generateSnapshot(
         .where("time", isLessThan: endOfDay);
   }
 
-  return query.snapshots();
+  return query.orderBy("time", descending: true).snapshots();
 }

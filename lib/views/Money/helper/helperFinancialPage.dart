@@ -366,7 +366,7 @@ void updateAmount({
           int currentAmount = walletDoc["maxAmount"] ?? 0;
           updatedAmount = currentAmount - totalAmount;
         } else {
-          updatedAmount = currentAmount + totalAmount;
+          updatedAmount = currentAmount - totalAmount;
         }
       }
     } else {
@@ -423,6 +423,7 @@ void resetWallet(
 Future<void> generateExcel({
   required AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot,
   required BuildContext context,
+  required String user,
 }) async {
   var dataSnapshot = snapshot.data!.docs;
   var excel = Excel.createExcel();
@@ -450,27 +451,35 @@ Future<void> generateExcel({
     ]);
   }
 
+  var status = await Permission.storage.status;
+  if (!status.isGranted) {
+    await Permission.storage.request();
+  }
+
   Directory? outputDirectory;
-  if (Platform.isAndroid && await Permission.manageExternalStorage.isGranted) {
-    outputDirectory = await getExternalStorageDirectory();
+  if (Platform.isAndroid && !await Permission.manageExternalStorage.isGranted) {
+    await Permission.manageExternalStorage.request();
+  }
+
+  String? outputPath = await FilePicker.platform.getDirectoryPath();
+  print(outputPath);
+  if (outputPath == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Penyimpanan dibatalkan."),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return; // Stop function here if path is null
   } else {
-    String? outputPath = await FilePicker.platform.getDirectoryPath();
-    if (outputPath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Penyimpanan dibatalkan."),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
     outputDirectory = Directory(outputPath);
   }
 
   DateTime now = DateTime.now();
   String basePath =
-      '${outputDirectory!.path}/${now.year}-${now.month}-${now.day}-CatatanFinansial';
+      '${outputDirectory.path}/${now.year}-${now.month}-${now.day}-CatatanFinansial$user';
 
+// Selanjutnya proses simpan file seperti biasa
   int counter = 0;
   String filePath;
   do {
