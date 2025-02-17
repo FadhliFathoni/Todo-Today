@@ -33,6 +33,7 @@ class _MainFinancialState extends State<MainFinancial> {
     return Scaffold(
       backgroundColor: BG_COLOR,
       appBar: AppBar(
+        surfaceTintColor: Colors.white,
         backgroundColor: Colors.white,
         leading: BackButton(
           color: PRIMARY_COLOR,

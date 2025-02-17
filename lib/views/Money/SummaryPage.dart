@@ -16,14 +16,17 @@ class SummaryPage extends StatefulWidget {
 
 class _SummaryPageState extends State<SummaryPage> {
   int bulanKebelakang = 1;
-  String selectedRange = "Per Bulan";
+  String selectedRange = "Per Tahun";
 
   DateTime getDateTime() {
     var now = DateTime.now();
-    if (selectedRange == "Per Bulan") {
-      return DateTime(now.year, (now.month - bulanKebelakang) - 1, now.day);
+    if (selectedRange == "Per Tahun") {
+      return DateTime(
+          now.year - bulanKebelakang - 1, 1, 1); // Start of the year
+    } else if (selectedRange == "Per Bulan") {
+      return DateTime(now.year, (now.month) - 1, now.day);
     } else {
-      return now.subtract(Duration(days: bulanKebelakang + 1));
+      return now.subtract(Duration(days: bulanKebelakang));
     }
   }
 
@@ -57,7 +60,9 @@ class _SummaryPageState extends State<SummaryPage> {
                     ),
                   ),
                   replacement: Text(
-                    "Berapa hari ke belakang",
+                    (selectedRange == "Per Tahun")
+                        ? "Berapa tahun ke belakang"
+                        : "Berapa hari ke belakang",
                     style: myTextStyle(
                       size: 18,
                       color: PRIMARY_COLOR,
@@ -108,7 +113,7 @@ class _SummaryPageState extends State<SummaryPage> {
                   dropdownColor: Colors.white,
                   value: selectedRange,
                   iconEnabledColor: PRIMARY_COLOR,
-                  items: ["Per Bulan", "Per Hari"]
+                  items: ["Per Tahun", "Per Bulan", "Per Hari"]
                       .map((range) => DropdownMenuItem(
                             value: range,
                             child: Text(
@@ -153,26 +158,31 @@ class _SummaryPageState extends State<SummaryPage> {
                 int total = docData["total"];
                 Timestamp timestamp = docData["time"];
                 DateTime date = timestamp.toDate();
-
-                // Tentukan format kunci berdasarkan pilihan rentang waktu
                 String dateKey = selectedRange == "Per Bulan"
                     ? DateFormat('yyyy-MM').format(date)
-                    : DateFormat('yyyy-MM-dd').format(date);
+                    : selectedRange == "Per Tahun"
+                        ? DateFormat('yyyy').format(date) // Format untuk tahun
+                        : DateFormat('yyyy-MM-dd')
+                            .format(date); // Format untuk hari
 
                 totals[dateKey] = (totals[dateKey] ?? 0) + total;
               }
-
-              // Ubah data ke dalam objek ChartData
               totals.forEach((key, value) {
-                DateTime date = DateFormat(
-                        selectedRange == "Per Bulan" ? 'yyyy-MM' : 'yyyy-MM-dd')
+                DateTime date = DateFormat(selectedRange == "Per Bulan"
+                        ? 'yyyy-MM'
+                        : selectedRange == "Per Tahun"
+                            ? 'yyyy' // Format untuk tahun
+                            : 'yyyy-MM-dd') // Format untuk hari
                     .parse(key);
                 dataChart.add(ChartData(
-                    DateFormat(selectedRange == "Per Bulan" ? 'MMMM' : 'dd MMM')
+                    DateFormat(selectedRange == "Per Bulan"
+                            ? 'MMMM'
+                            : selectedRange == "Per Tahun"
+                                ? 'yyyy' // Format label untuk tahun
+                                : 'dd MMM') // Format label untuk hari
                         .format(date),
                     value));
               });
-
               return Column(
                 children: [
                   Container(

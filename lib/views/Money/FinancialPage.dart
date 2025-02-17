@@ -40,6 +40,18 @@ class _FinancialpageState extends State<Financialpage> {
       initialDate: dateInput,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: PRIMARY_COLOR,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedDate != null) {
