@@ -21,12 +21,11 @@ class _SummaryPageState extends State<SummaryPage> {
   DateTime getDateTime() {
     var now = DateTime.now();
     if (selectedRange == "Per Tahun") {
-      return DateTime(
-          now.year - bulanKebelakang - 1, 1, 1); // Start of the year
+      return DateTime(now.year - bulanKebelakang, 1, 1); // Start of the year
     } else if (selectedRange == "Per Bulan") {
-      return DateTime(now.year, (now.month) - 1, now.day);
+      return DateTime(now.year, (now.month - bulanKebelakang), now.day);
     } else {
-      return now.subtract(Duration(days: bulanKebelakang));
+      return now.subtract(Duration(days: bulanKebelakang + 2));
     }
   }
 
@@ -74,7 +73,9 @@ class _SummaryPageState extends State<SummaryPage> {
                   children: [
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                          shape: CircleBorder(), backgroundColor: Colors.white),
+                          foregroundColor: PRIMARY_COLOR,
+                          shape: CircleBorder(),
+                          backgroundColor: Colors.white),
                       onPressed: () {
                         if (bulanKebelakang > 1) {
                           setState(() {
@@ -93,6 +94,7 @@ class _SummaryPageState extends State<SummaryPage> {
                     ),
                     ElevatedButton(
                         style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.green,
                           shape: CircleBorder(),
                           backgroundColor: Colors.white,
                         ),

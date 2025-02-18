@@ -87,6 +87,7 @@ class todoCard extends StatelessWidget {
                                   builder: (BuildContext context,
                                       StateSetter setState) {
                                     return AlertDialog(
+                                      backgroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(20)),
@@ -101,8 +102,10 @@ class todoCard extends StatelessWidget {
                                                 child: Text(
                                               "Update",
                                               style: TextStyle(
-                                                  fontFamily: PRIMARY_FONT,
-                                                  color: PRIMARY_COLOR),
+                                                fontFamily: PRIMARY_FONT,
+                                                color: PRIMARY_COLOR,
+                                                fontSize: 18,
+                                              ),
                                             )),
                                             Container(
                                               margin: EdgeInsets.only(top: 14),
@@ -199,8 +202,37 @@ class todoCard extends StatelessWidget {
                                               onTap: () async {
                                                 final TimeOfDay? picked =
                                                     await showTimePicker(
-                                                        context: context,
-                                                        initialTime: time);
+                                                  context: context,
+                                                  initialTime: time,
+                                                  builder: (context, child) {
+                                                    return Theme(
+                                                      data: Theme.of(context)
+                                                          .copyWith(
+                                                        colorScheme:
+                                                            ColorScheme.light(
+                                                          primary:
+                                                              PRIMARY_COLOR, // Warna utama (misal, warna tombol OK)
+                                                          onPrimary: Colors
+                                                              .white, // Warna teks di atas primary
+                                                          onSurface: Colors
+                                                              .black, // Warna teks di atas background
+                                                        ),
+                                                        dialogBackgroundColor:
+                                                            Colors
+                                                                .white, // Warna background picker
+                                                        textButtonTheme:
+                                                            TextButtonThemeData(
+                                                          style: TextButton
+                                                              .styleFrom(
+                                                            foregroundColor:
+                                                                PRIMARY_COLOR, // Warna tombol Cancel
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      child: child!,
+                                                    );
+                                                  },
+                                                );
                                                 if (picked != null) {
                                                   setState(() {
                                                     time = picked;
@@ -211,6 +243,8 @@ class todoCard extends StatelessWidget {
                                             Row(
                                               children: [
                                                 Checkbox(
+                                                    checkColor: Colors.white,
+                                                    activeColor: PRIMARY_COLOR,
                                                     value: isDaily,
                                                     onChanged: (value) {
                                                       setState(() {
@@ -247,9 +281,7 @@ class todoCard extends StatelessWidget {
                                                       Colors.white),
                                             )),
                                         Container(
-                                          margin: EdgeInsets.only(right: 14),
                                           height: 28,
-                                          width: 81,
                                           child: ElevatedButton(
                                             onPressed: () {
                                               user.doc(id).update({
@@ -274,6 +306,7 @@ class todoCard extends StatelessWidget {
                                             child: Text(
                                               "Update",
                                               style: TextStyle(
+                                                  color: Colors.white,
                                                   fontFamily: PRIMARY_FONT),
                                             ),
                                             style: ElevatedButton.styleFrom(
@@ -306,7 +339,9 @@ class todoCard extends StatelessWidget {
                             backgroundColor: PRIMARY_COLOR),
                         child: Text(
                           "Done",
-                          style: TextStyle(fontFamily: "DeliciousHandrawn"),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: "DeliciousHandrawn"),
                         ),
                       ),
                     ),

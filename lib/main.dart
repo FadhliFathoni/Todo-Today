@@ -1,10 +1,12 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, sized_box_for_whitespace, must_be_immutable
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/core/background.dart';
+import 'package:todo_today/core/firebase_messaging_service.dart';
 import 'package:todo_today/views/history/History.dart';
 import 'package:todo_today/views/Todo/homepage/Home.dart';
 import 'package:todo_today/views/loginpage/LoginPage.dart';
@@ -16,7 +18,7 @@ import "package:flutter_widgetkit/flutter_widgetkit.dart";
 Color PRIMARY_COLOR = Color.fromARGB(255, 164, 83, 56);
 Color BG_COLOR = Color.fromARGB(255, 193, 200, 192);
 String PRIMARY_FONT = "DeliciousHandrawn";
-// FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
+FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
 
 double height(BuildContext context) => MediaQuery.of(context).size.height;
 double width(BuildContext context) => MediaQuery.of(context).size.width;
@@ -24,10 +26,11 @@ double width(BuildContext context) => MediaQuery.of(context).size.width;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await initializeService();
-  // flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   await initializeDateFormatting(
       'id', null); // Initialize for Indonesian locale
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessagingService.initialize();
   runApp(MyApp());
 }
 
@@ -92,6 +95,7 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         centerTitle: true,
         title: GestureDetector(
           onTap: () async {

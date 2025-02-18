@@ -196,7 +196,7 @@ class _WishListState extends State<WishList> {
           stream: wishlist.where("status", isEqualTo: "belum").snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
+              return Center(child: MyCircularProgressIndicator());
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else if (snapshot.hasData) {
@@ -521,6 +521,19 @@ class _WishListState extends State<WishList> {
   }
 }
 
+class MyCircularProgressIndicator extends StatelessWidget {
+  const MyCircularProgressIndicator({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CircularProgressIndicator(
+      color: PRIMARY_COLOR,
+    );
+  }
+}
+
 class WishListDone extends StatefulWidget {
   const WishListDone({
     Key? key,
@@ -545,7 +558,7 @@ class _WishListDoneState extends State<WishListDone> {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return Center(child: MyCircularProgressIndicator());
         }
         if (snapshot.hasError) {
           return Center(child: Text("Error: ${snapshot.error}"));

@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_today/main.dart';
+import 'package:todo_today/mainWishList.dart';
 import 'package:todo_today/views/history/riwayatCard.dart';
 
 class History extends StatefulWidget {
@@ -46,7 +47,7 @@ class HistoryState extends State<History> {
             );
           } else {
             return Center(
-              child: CircularProgressIndicator(),
+              child: MyCircularProgressIndicator(),
             );
           }
         },

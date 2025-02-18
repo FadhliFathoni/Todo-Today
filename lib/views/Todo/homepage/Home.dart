@@ -129,7 +129,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                           Positioned(
                                             left: 0,
                                             right: 0,
-                                            top: -40,
+                                            top: -50,
                                             bottom: 0,
                                             child: Container(
                                               color: Colors.transparent,
@@ -149,20 +149,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                         ],
                                       ),
                                       Positioned(
-                                        top: 100,
+                                        bottom: 0,
                                         child: Container(
                                           width: width(context),
-                                          child: Container(
-                                              width: width(context),
-                                              child: todoCard(
-                                                  user: user,
-                                                  title: data['title'],
-                                                  description:
-                                                      data['description'],
-                                                  remaining:
-                                                      "${data['hour']}:${data['minute']}",
-                                                  id: listData[index].id,
-                                                  isdaily: data['daily'])),
+                                          child: todoCard(
+                                              user: user,
+                                              title: data['title'],
+                                              description: data['description'],
+                                              remaining:
+                                                  "${data['hour']}:${data['minute']}",
+                                              id: listData[index].id,
+                                              isdaily: data['daily']),
                                         ),
                                       ),
                                     ],
@@ -187,7 +184,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                   child: Stack(
                                     children: [
                                       Positioned(
-                                        top: -40,
+                                        top: -50,
                                         right: 0,
                                         child: Stack(
                                           children: [
@@ -219,20 +216,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                         ),
                                       ),
                                       Positioned(
-                                        top: 100,
+                                        bottom: 0,
                                         child: Container(
                                           width: width(context),
-                                          child: Container(
-                                              width: width(context),
-                                              child: todoCard(
-                                                  user: user,
-                                                  title: data['title'],
-                                                  description:
-                                                      data['description'],
-                                                  remaining:
-                                                      "${data['hour']}:${data['minute']}",
-                                                  id: listData[index].id,
-                                                  isdaily: data['daily'])),
+                                          child: todoCard(
+                                              user: user,
+                                              title: data['title'],
+                                              description: data['description'],
+                                              remaining:
+                                                  "${data['hour']}:${data['minute']}",
+                                              id: listData[index].id,
+                                              isdaily: data['daily']),
                                         ),
                                       ),
                                     ],
@@ -260,7 +254,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     child: Text("There is an error"),
                   );
                 } else {
-                  return Center(child: CircularProgressIndicator());
+                  return Center(child: MyCircularProgressIndicator());
                 }
               },
             ),
@@ -417,6 +411,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
               content: Container(
@@ -469,7 +464,31 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                       ),
                       onTap: () async {
                         final TimeOfDay? picked = await showTimePicker(
-                            context: context, initialTime: time);
+                            context: context, initialTime: time,
+                            builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: ColorScheme.light(
+                                  primary:
+                                      PRIMARY_COLOR, // Warna utama (misal, warna tombol OK)
+                                  onPrimary: Colors
+                                      .white, // Warna teks di atas primary
+                                  onSurface: Colors
+                                      .black, // Warna teks di atas background
+                                ),
+                                dialogBackgroundColor:
+                                    Colors.white, // Warna background picker
+                                textButtonTheme: TextButtonThemeData(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor:
+                                        PRIMARY_COLOR, // Warna tombol Cancel
+                                  ),
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
+                            );
                         if (picked != null) {
                           setState(() {
                             time = picked;
@@ -519,7 +538,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                       },
                       child: Text(
                         "Create",
-                        style: TextStyle(fontFamily: PRIMARY_FONT),
+                        style: TextStyle(
+                            fontFamily: PRIMARY_FONT, color: Colors.white),
                       ),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: PRIMARY_COLOR),

@@ -1,6 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:customizable_datetime_picker/date_picker_widget.dart';
-import 'package:customizable_datetime_picker/sources/widget/customizable_date_picker_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:todo_today/Component/FormattedDateTime.dart';
@@ -56,7 +54,27 @@ class _FinancialpageState extends State<Financialpage> {
 
     if (pickedDate != null) {
       final TimeOfDay? pickedTime = await showTimePicker(
-          context: context, initialTime: TimeOfDay.fromDateTime(dateInput));
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(dateInput),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: PRIMARY_COLOR, // Warna utama (misal, warna tombol OK)
+                onPrimary: Colors.white, // Warna teks di atas primary
+                onSurface: Colors.black, // Warna teks di atas background
+              ),
+              dialogBackgroundColor: Colors.white, // Warna background picker
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  foregroundColor: PRIMARY_COLOR, // Warna tombol Cancel
+                ),
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
 
       if (pickedTime != null) {
         dialogSetState(() {

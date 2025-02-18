@@ -65,14 +65,12 @@ class FirebaseMessagingService {
         message.notification?.body ?? message.data['body'] ?? 'No Body';
 
     const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-      'channel_id',
-      'channel_name',
-      importance: Importance.high,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-    );
+        AndroidNotificationDetails('channel_id', 'channel_name',
+            importance: Importance.high,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            icon: "launcher_icon.png");
 
     const NotificationDetails details =
         NotificationDetails(android: androidDetails);
