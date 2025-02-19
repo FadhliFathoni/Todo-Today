@@ -6,7 +6,8 @@ import 'package:todo_today/main.dart';
 
 class riwayatCard extends StatelessWidget {
   CollectionReference user;
-  String title, description, remaining, id;
+  String title, description, remaining;
+  int id;
   riwayatCard(
       {required this.user,
       required this.title,

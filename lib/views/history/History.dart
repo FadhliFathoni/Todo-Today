@@ -2,8 +2,10 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:todo_today/API/todoAPI.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/mainWishList.dart';
+import 'package:todo_today/views/Todo/homepage/Home.dart';
 import 'package:todo_today/views/history/riwayatCard.dart';
 
 class History extends StatefulWidget {
@@ -22,20 +24,20 @@ class HistoryState extends State<History> {
     return Scaffold(
         body: Container(
       color: BG_COLOR,
-      child: StreamBuilder(
-        stream: user.snapshots(),
+      child: FutureBuilder(
+        future: TodoAPI().getTodo(isHistory: true),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return ListView(
-              children: snapshot.data!.docs.map((e) {
-                var data = e.data() as Map<String, dynamic>;
-                if (data['status'] == "Done") {
+              children: snapshot.data!.map((e) {
+                var data = e;
+                if (data.done == 1) {
                   return riwayatCard(
                       user: user,
-                      title: data['title'],
-                      description: data['description'],
-                      remaining: "${data['hour']}:${data['minute']}",
-                      id: e.id);
+                      title: data.title!,
+                      description: data.description!,
+                      remaining: formatDate(data.date!),
+                      id: data.id!);
                 } else {
                   return Container();
                 }

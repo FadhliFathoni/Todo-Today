@@ -3,28 +3,53 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_today/API/todoAPI.dart';
 import 'package:todo_today/main.dart';
+import 'package:todo_today/model/TodoModel.dart';
+import 'package:todo_today/views/Todo/homepage/Home.dart';
 
-class todoCard extends StatelessWidget {
+class todoCard extends StatefulWidget {
   CollectionReference user;
-  String title, description, remaining, id;
+  String title, description, remaining;
+  int id;
   bool isdaily;
-  todoCard(
-      {required this.user,
-      required this.title,
-      required this.description,
-      required this.remaining,
-      required this.id,
-      required this.isdaily});
+  void Function(void Function()) setState;
+  bool? fromUpdate;
+
+  todoCard({
+    required this.user,
+    required this.title,
+    required this.description,
+    required this.remaining,
+    required this.id,
+    required this.isdaily,
+    required this.setState,
+    this.fromUpdate,
+  });
+
+  @override
+  State<todoCard> createState() => _todoCardState();
+}
+
+class _todoCardState extends State<todoCard> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     var titleController = TextEditingController();
+    titleController.text = widget.title;
     var descriptionController = TextEditingController();
-    var isDaily = isdaily;
+    descriptionController.text = widget.description;
+    var isDaily = widget.isdaily;
     TimeOfDay time = TimeOfDay.now();
     double height(BuildContext context) => MediaQuery.of(context).size.height;
     double width(BuildContext context) => MediaQuery.of(context).size.width;
+
     return Container(
       // width: 100,
       margin: EdgeInsets.only(left: 20, right: 20, top: 10),
@@ -51,21 +76,21 @@ class todoCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            title,
+                            widget.title,
                             style: TextStyle(
                                 fontFamily: PRIMARY_FONT,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16),
                           ),
                           Text(
-                            remaining,
+                            formatDate(widget.remaining),
                             style: TextStyle(
                                 fontFamily: PRIMARY_FONT, fontSize: 16),
                           )
                         ],
                       ),
                       Text(
-                        description,
+                        widget.description,
                         style: TextStyle(
                             fontFamily: PRIMARY_FONT, color: Colors.grey),
                       ),
@@ -267,8 +292,10 @@ class todoCard extends StatelessWidget {
                                             width: 81,
                                             child: ElevatedButton(
                                               onPressed: () {
-                                                user.doc(id).delete();
+                                                // user.doc(id).delete();
+                                                TodoAPI().delete(widget.id);
                                                 Navigator.pop(context);
+                                                setState(() {});
                                               },
                                               child: Text(
                                                 "Delete",
@@ -283,24 +310,41 @@ class todoCard extends StatelessWidget {
                                         Container(
                                           height: 28,
                                           child: ElevatedButton(
-                                            onPressed: () {
-                                              user.doc(id).update({
-                                                "title": (titleController
-                                                        .text.isNotEmpty)
-                                                    ? titleController.text
-                                                    : title,
-                                                "description":
-                                                    (descriptionController
-                                                            .text.isNotEmpty)
-                                                        ? descriptionController
-                                                            .text
-                                                        : description,
-                                                // "hour": "${time.hour}",
-                                                // "minute": "${time.minute}",
-                                                "daily": isDaily
-                                              });
-                                              FlutterBackgroundService()
-                                                  .invoke("setAsBackground");
+                                            onPressed: () async {
+                                              // user.doc(id).update({
+                                              //   "title": (titleController
+                                              //           .text.isNotEmpty)
+                                              //       ? titleController.text
+                                              //       : title,
+                                              //   "description":
+                                              //       (descriptionController
+                                              //               .text.isNotEmpty)
+                                              //           ? descriptionController
+                                              //               .text
+                                              //           : description,
+                                              //   // "hour": "${time.hour}",
+                                              //   // "minute": "${time.minute}",
+                                              //   "daily": isDaily
+                                              // });
+                                              // FlutterBackgroundService()
+                                              //     .invoke("setAsBackground");
+                                              var prefs =
+                                                  await SharedPreferences
+                                                      .getInstance();
+                                              var username =
+                                                  await prefs.getString("user");
+                                              TodoModel todo = TodoModel(
+                                                title: titleController.text,
+                                                description:
+                                                    descriptionController.text,
+                                                everyday: (isDaily) ? 1 : 0,
+                                                date: formatDateTime(time),
+                                                done: 0,
+                                                username: username,
+                                                id: widget.id,
+                                              );
+                                              TodoAPI().updateTodo(context,
+                                                  todo: todo);
                                               Navigator.pop(context);
                                             },
                                             child: Text(
@@ -333,7 +377,9 @@ class todoCard extends StatelessWidget {
                       height: 28,
                       child: ElevatedButton(
                         onPressed: () {
-                          user.doc(id).update({"status": "Done"});
+                          // user.doc(id).update({"status": "Done"});
+                          TodoAPI().doneTodo(widget.id);
+                          widget.setState(() {});
                         },
                         style: ElevatedButton.styleFrom(
                             backgroundColor: PRIMARY_COLOR),

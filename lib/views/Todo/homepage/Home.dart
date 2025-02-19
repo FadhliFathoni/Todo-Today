@@ -3,6 +3,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_today/API/todoAPI.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/Component/Text/ParagraphText.dart';
 import 'package:todo_today/main.dart';
@@ -10,6 +13,7 @@ import 'package:todo_today/mainFinancial.dart';
 import 'package:todo_today/mainWishList.dart';
 import 'package:todo_today/Component/CircularButton.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
+import 'package:todo_today/model/TodoModel.dart';
 import 'package:todo_today/views/Todo/homepage/todoCard.dart';
 
 class Home extends StatefulWidget {
@@ -70,25 +74,33 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     CollectionReference user = firestore.collection(widget.user);
 
     return Scaffold(
+      backgroundColor: BG_COLOR,
       body: Container(
         height: height(context),
+        width: width(context),
         color: BG_COLOR,
         child: Stack(
           children: [
-            StreamBuilder(
-              stream: user.orderBy('daily', descending: true).snapshots(),
+            FutureBuilder(
+              future: TodoAPI().getTodo(isHistory: false),
               builder: (context, snapshot) {
-                if (snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                      child: CircularProgressIndicator(color: PRIMARY_COLOR));
+                } else if (!snapshot.hasData) {
+                  return Center(
+                    child: Text("There is an error"),
+                  );
+                } else if (snapshot.hasData) {
                   int firstIndex = 0;
-                  List<QueryDocumentSnapshot> listData = [];
-                  for (int x = 0; x < snapshot.data!.size; x++) {
-                    var dataId = snapshot.data?.docs[x];
-                    var data = dataId!.data() as Map<String, dynamic>;
-                    if (data['status'] != "Done") {
-                      if (data['daily'] == true) {
-                        listData.insert(0, dataId);
-                      } else if (data['daily'] == false) {
-                        listData.add(dataId);
+                  List<TodoModel> listData = [];
+                  for (int x = 0; x < snapshot.data!.length; x++) {
+                    var data = snapshot.data?[x];
+                    if (data!.done != 1) {
+                      if (data.everyday == 1) {
+                        listData.insert(0, data);
+                      } else if (data.everyday == 0) {
+                        listData.add(data);
                       }
                     }
                   }
@@ -96,106 +108,45 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     print(listData[x]);
                   }
                   for (int x = 0; x < listData.length; x++) {
-                    if (listData[x]['daily'] == false &&
-                        listData[x]['status'] != "Done") {
+                    if (listData[x].everyday == 0 && listData[x].done != 1) {
                       firstIndex = x;
                       print(firstIndex);
                       break;
                     }
                   }
                   for (int x = 0; x < listData.length; x++) {
-                    print(listData[x]['daily']);
+                    print(listData[x].everyday);
                   }
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: listData.length,
-                          itemBuilder: (context, index) {
-                            var data = listData[index];
-                            if (data['daily'] == true) {
-                              if (index == 0) {
-                                return Container(
-                                  height: 250,
-                                  child: Stack(
-                                    children: [
-                                      Stack(
-                                        children: [
-                                          Image.asset(
-                                            "assets/images/batu-daily.png",
-                                            width: 200,
-                                          ),
-                                          Positioned(
-                                            left: 0,
-                                            right: 0,
-                                            top: -50,
-                                            bottom: 0,
-                                            child: Container(
-                                              color: Colors.transparent,
-                                              height: 100,
-                                              width: 100,
-                                              child: Center(
-                                                  child: Text(
-                                                "Daily",
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontFamily:
-                                                        "DeliciousHandrawn",
-                                                    fontSize: 36),
-                                              )),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                      Positioned(
-                                        bottom: 0,
-                                        child: Container(
-                                          width: width(context),
-                                          child: todoCard(
-                                              user: user,
-                                              title: data['title'],
-                                              description: data['description'],
-                                              remaining:
-                                                  "${data['hour']}:${data['minute']}",
-                                              id: listData[index].id,
-                                              isdaily: data['daily']),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              } else {
-                                return Container(
-                                    width: width(context),
-                                    child: todoCard(
-                                        user: user,
-                                        title: data['title'],
-                                        description: data['description'],
-                                        remaining:
-                                            "${data['hour']}:${data['minute']}",
-                                        id: listData[index].id,
-                                        isdaily: data['daily']));
-                              }
-                            } else {
-                              if (index == firstIndex) {
-                                return Container(
-                                  height: 250,
-                                  child: Stack(
-                                    children: [
-                                      Positioned(
-                                        top: -50,
-                                        right: 0,
-                                        child: Stack(
+                  return RefreshIndicator(
+                    backgroundColor: Colors.white,
+                    color: PRIMARY_COLOR,
+                    onRefresh: () async {
+                      setState(() {});
+                    },
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: listData.length,
+                            itemBuilder: (context, index) {
+                              var data = listData[index];
+                              if (data.everyday == 1) {
+                                if (index == 0) {
+                                  return Container(
+                                    height: 250,
+                                    child: Stack(
+                                      children: [
+                                        Stack(
                                           children: [
                                             Image.asset(
-                                              "assets/images/batu-not-daily.png",
-                                              width: 250,
+                                              "assets/images/batu-daily.png",
+                                              width: 200,
                                             ),
                                             Positioned(
                                               left: 0,
                                               right: 0,
-                                              top: 10,
+                                              top: -50,
                                               bottom: 0,
                                               child: Container(
                                                 color: Colors.transparent,
@@ -203,7 +154,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                                 width: 100,
                                                 child: Center(
                                                     child: Text(
-                                                  "Not Daily",
+                                                  "Daily",
                                                   style: TextStyle(
                                                       color: Colors.white,
                                                       fontFamily:
@@ -214,44 +165,111 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                             )
                                           ],
                                         ),
-                                      ),
-                                      Positioned(
-                                        bottom: 0,
-                                        child: Container(
-                                          width: width(context),
-                                          child: todoCard(
+                                        Positioned(
+                                          bottom: 0,
+                                          child: Container(
+                                            width: width(context),
+                                            child: todoCard(
                                               user: user,
-                                              title: data['title'],
-                                              description: data['description'],
-                                              remaining:
-                                                  "${data['hour']}:${data['minute']}",
-                                              id: listData[index].id,
-                                              isdaily: data['daily']),
+                                              title: data.title!,
+                                              description: data.description!,
+                                              remaining: data.date!,
+                                              id: data.id!,
+                                              isdaily: data.everyday == 1,
+                                              setState: setState,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                );
+                                      ],
+                                    ),
+                                  );
+                                } else {
+                                  return Container(
+                                    width: width(context),
+                                    child: todoCard(
+                                      user: user,
+                                      title: data.title!,
+                                      description: data.description!,
+                                      remaining: data.date!,
+                                      id: data.id!,
+                                      isdaily: data.everyday == 1,
+                                      setState: setState,
+                                    ),
+                                  );
+                                }
                               } else {
-                                return todoCard(
-                                  user: user,
-                                  title: data['title'],
-                                  description: data['description'],
-                                  remaining:
-                                      "${data['hour']}:${data['minute']}",
-                                  id: listData[index].id,
-                                  isdaily: data['daily'],
-                                );
+                                if (index == firstIndex) {
+                                  return Container(
+                                    height: 250,
+                                    child: Stack(
+                                      children: [
+                                        Positioned(
+                                          top: -50,
+                                          right: 0,
+                                          child: Stack(
+                                            children: [
+                                              Image.asset(
+                                                "assets/images/batu-not-daily.png",
+                                                width: 250,
+                                              ),
+                                              Positioned(
+                                                left: 0,
+                                                right: 0,
+                                                top: 10,
+                                                bottom: 0,
+                                                child: Container(
+                                                  color: Colors.transparent,
+                                                  height: 100,
+                                                  width: 100,
+                                                  child: Center(
+                                                      child: Text(
+                                                    "Not Daily",
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontFamily:
+                                                            "DeliciousHandrawn",
+                                                        fontSize: 36),
+                                                  )),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                        Positioned(
+                                          bottom: 0,
+                                          child: Container(
+                                            width: width(context),
+                                            child: todoCard(
+                                              user: user,
+                                              title: data.title!,
+                                              description: data.description!,
+                                              remaining: data.date!,
+                                              id: data.id!,
+                                              isdaily: data.everyday == 1,
+                                              setState: setState,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                } else {
+                                  return todoCard(
+                                    user: user,
+                                    title: data.title!,
+                                    description: data.description!,
+                                    remaining: data.date!,
+                                    id: data.id!,
+                                    isdaily: data.everyday == 1,
+                                    setState: setState,
+                                  );
+                                }
                               }
-                            }
-                          },
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  );
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: Text("There is an error"),
+                      ],
+                    ),
                   );
                 } else {
                   return Center(child: MyCircularProgressIndicator());
@@ -329,7 +347,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                         color: PRIMARY_COLOR,
                         icon: Icons.add,
                         onTap: () {
-                          dialogTambah(context, user);
+                          dialogTambah(context, setState);
                         },
                       ),
                     ),
@@ -399,7 +417,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   }
 
   Future<dynamic> dialogTambah(
-      BuildContext context, CollectionReference<Object?> user) {
+      BuildContext context, void Function(void Function())) {
     TimeOfDay time = TimeOfDay.now();
     double width(BuildContext context) => MediaQuery.of(context).size.width;
     TextEditingController title = TextEditingController();
@@ -464,8 +482,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                       ),
                       onTap: () async {
                         final TimeOfDay? picked = await showTimePicker(
-                            context: context, initialTime: time,
-                            builder: (context, child) {
+                          context: context,
+                          initialTime: time,
+                          builder: (context, child) {
                             return Theme(
                               data: Theme.of(context).copyWith(
                                 colorScheme: ColorScheme.light(
@@ -488,7 +507,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                               child: child!,
                             );
                           },
-                            );
+                        );
                         if (picked != null) {
                           setState(() {
                             time = picked;
@@ -524,17 +543,28 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     width: 81,
                     child: ElevatedButton(
                       onPressed: () async {
-                        await user.add({
-                          "title": title.text,
-                          "description": description.text,
-                          "date": DateTime.now().toString(),
-                          "hour": "${time.hour}",
-                          "minute": "${time.minute}",
-                          "status": "Not done yet",
-                          "daily": isDaily
-                        });
+                        // await user.add({
+                        //   "title": title.text,
+                        //   "description": description.text,
+                        //   "date": DateTime.now().toString(),
+                        //   "hour": "${time.hour}",
+                        //   "minute": "${time.minute}",
+                        //   "status": "Not done yet",
+                        //   "daily": isDaily
+                        // });
+                        var prefs = await SharedPreferences.getInstance();
+                        var username = await prefs.getString("user");
+                        var data = TodoModel(
+                          title: title.text,
+                          description: description.text,
+                          date: formatDateTime(time),
+                          done: 0,
+                          everyday: (isDaily) ? 1 : 0,
+                          username: username,
+                        );
+                        TodoAPI().registerTodo(context, todo: data);
+                        setState(() {});
                         Navigator.pop(context);
-                        FlutterBackgroundService().invoke("setAsBackground");
                       },
                       child: Text(
                         "Create",
@@ -571,4 +601,18 @@ class MyCheckBox extends StatelessWidget {
       onChanged: onChanged,
     );
   }
+}
+
+String formatDate(String dateString) {
+  DateTime dateTime = DateTime.parse(dateString);
+  return DateFormat('HH:mm').format(dateTime);
+}
+
+String formatDateTime(TimeOfDay time) {
+  DateTime now = DateTime.now();
+
+  String formattedTime =
+      "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} "
+      "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00";
+  return formattedTime;
 }
