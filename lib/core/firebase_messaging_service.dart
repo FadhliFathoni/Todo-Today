@@ -1,7 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FirebaseMessagingService {
   static final FirebaseMessaging _firebaseMessaging =
@@ -35,7 +39,27 @@ class FirebaseMessagingService {
     // Dapatkan FCM Token
     String? token = await _firebaseMessaging.getToken();
     print("FCM Token: $token");
-
+    try {
+      String baseUrl = dotenv.get("BASE_URL");
+      var dio = Dio();
+      var prefs = await SharedPreferences.getInstance();
+      var username = prefs.getString('user');
+      print(baseUrl);
+      print(username);
+      var response = await dio.post(baseUrl + "/register-fcm",
+          data: {
+            "username": username,
+            "token": token,
+          },
+          options: Options(headers: {
+            "Accept": "application/json",
+          }));
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print("Sukses register token");
+      }
+    } catch (e) {
+      print("Gagal register token: " + e.toString());
+    }
     // Konfigurasi notifikasi lokal
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -65,12 +89,14 @@ class FirebaseMessagingService {
         message.notification?.body ?? message.data['body'] ?? 'No Body';
 
     const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails('channel_id', 'channel_name',
-            importance: Importance.high,
-            priority: Priority.high,
-            playSound: true,
-            enableVibration: true,
-            icon: "launcher_icon.png");
+        AndroidNotificationDetails(
+      'channel_id',
+      'channel_name',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+    );
 
     const NotificationDetails details =
         NotificationDetails(android: androidDetails);
