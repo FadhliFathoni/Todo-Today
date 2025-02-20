@@ -1,10 +1,22 @@
+import 'package:hive_flutter/hive_flutter.dart';
+
+part 'TodoModel.g.dart';
+
+@HiveType(typeId: 1)
 class TodoModel {
+  @HiveField(0)
   int? id;
+  @HiveField(1)
   String? username;
+  @HiveField(2)
   String? title;
+  @HiveField(3)
   String? description;
+  @HiveField(4)
   String? date;
+  @HiveField(5)
   int? everyday;
+  @HiveField(6)
   int? done;
 
   TodoModel(

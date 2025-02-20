@@ -1,12 +1,19 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, sized_box_for_whitespace, must_be_immutable
 
+import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_today/bloc/history_bloc/history_bloc.dart';
+import 'package:todo_today/bloc/todo_bloc/todo_bloc.dart';
 import 'package:todo_today/core/background.dart';
 import 'package:todo_today/core/firebase_messaging_service.dart';
+import 'package:todo_today/core/get_it.dart';
+import 'package:todo_today/core/hive_service.dart';
 import 'package:todo_today/views/history/History.dart';
 import 'package:todo_today/views/Todo/homepage/Home.dart';
 import 'package:todo_today/views/loginpage/LoginPage.dart';
@@ -24,6 +31,17 @@ FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
 double height(BuildContext context) => MediaQuery.of(context).size.height;
 double width(BuildContext context) => MediaQuery.of(context).size.width;
 
+class MainRepository {
+  Future<void> init() async {
+    final dio = Dio();
+    GetItContainer.initialize();
+    GetItContainer.initializeConfig(dio);
+
+    await GetIt.I<HiveService>().init();
+    await GetIt.I<HiveService>().openBoxes();
+  }
+}
+
 void main() async {
   await dotenv.load(fileName: "assets/.env");
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +51,8 @@ void main() async {
       'id', null); // Initialize for Indonesian locale
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessagingService.initialize();
+  var service = MainRepository();
+  await service.init();
   runApp(MyApp());
 }
 
@@ -94,47 +114,69 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        centerTitle: true,
-        title: GestureDetector(
-          onTap: () async {
-            FlutterBackgroundService().invoke("stopService");
-            final prefs = await SharedPreferences.getInstance();
-            prefs.clear();
-            Navigator.pushReplacement(context, MaterialPageRoute(
-              builder: (context) {
-                return LoginPage();
-              },
-            ));
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) {
+            final bloc = TodoTodayBloc();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.initializeTodo();
+            });
+            return bloc;
           },
-          child: Text(
-            "Todo Today",
-            style: TextStyle(
-                color: PRIMARY_COLOR,
-                fontFamily: PRIMARY_FONT,
-                fontWeight: FontWeight.w600),
+        ),
+        BlocProvider(
+          create: (context) {
+            final bloc = HistoryTodoBloc();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              bloc.initializeTodo();
+            });
+            return bloc;
+          },
+        ),
+      ],
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          centerTitle: true,
+          title: GestureDetector(
+            onTap: () async {
+              FlutterBackgroundService().invoke("stopService");
+              final prefs = await SharedPreferences.getInstance();
+              prefs.clear();
+              Navigator.pushReplacement(context, MaterialPageRoute(
+                builder: (context) {
+                  return LoginPage();
+                },
+              ));
+            },
+            child: Text(
+              "Todo Today",
+              style: TextStyle(
+                  color: PRIMARY_COLOR,
+                  fontFamily: PRIMARY_FONT,
+                  fontWeight: FontWeight.w600),
+            ),
           ),
         ),
+        body: buildBody(),
+        bottomNavigationBar: BottomNavigationBar(
+            backgroundColor: Colors.white,
+            selectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
+            unselectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
+            currentIndex: currentIndex,
+            onTap: (value) {
+              currentIndex = value;
+              setState(() {});
+            },
+            selectedItemColor: PRIMARY_COLOR,
+            items: [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.history), label: "History"),
+            ]),
       ),
-      body: buildBody(),
-      bottomNavigationBar: BottomNavigationBar(
-          backgroundColor: Colors.white,
-          selectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
-          unselectedLabelStyle: TextStyle(fontFamily: PRIMARY_FONT),
-          currentIndex: currentIndex,
-          onTap: (value) {
-            currentIndex = value;
-            setState(() {});
-          },
-          selectedItemColor: PRIMARY_COLOR,
-          items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.history), label: "History"),
-          ]),
     );
   }
 }

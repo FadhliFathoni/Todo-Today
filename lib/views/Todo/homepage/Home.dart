@@ -2,19 +2,23 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/API/todoAPI.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/Component/Text/ParagraphText.dart';
+import 'package:todo_today/bloc/todo_bloc/todo_bloc.dart';
+import 'package:todo_today/bloc/todo_bloc/todo_state.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/mainFinancial.dart';
 import 'package:todo_today/mainWishList.dart';
 import 'package:todo_today/Component/CircularButton.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/model/TodoModel.dart';
-import 'package:todo_today/views/Todo/homepage/todoCard.dart';
+import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
+import 'package:todo_today/views/Todo/homepage/component/MyCheckBox.dart';
+import 'package:todo_today/views/Todo/homepage/component/todoCard.dart';
 
 class Home extends StatefulWidget {
   String user;
@@ -81,22 +85,18 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         color: BG_COLOR,
         child: Stack(
           children: [
-            FutureBuilder(
-              future: TodoAPI().getTodo(isHistory: false),
+            BlocBuilder(
+              bloc: TodoTodayBloc()..getTodo(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot is TodoLoading) {
                   return Center(
                       child: CircularProgressIndicator(color: PRIMARY_COLOR));
-                } else if (!snapshot.hasData) {
-                  return Center(
-                    child: Text("There is an error"),
-                  );
-                } else if (snapshot.hasData) {
+                } else if (snapshot is TodoLoaded) {
                   int firstIndex = 0;
                   List<TodoModel> listData = [];
-                  for (int x = 0; x < snapshot.data!.length; x++) {
-                    var data = snapshot.data?[x];
-                    if (data!.done != 1) {
+                  for (int x = 0; x < snapshot.todos.length; x++) {
+                    var data = snapshot.todos[x];
+                    if (data.done != 1) {
                       if (data.everyday == 1) {
                         listData.insert(0, data);
                       } else if (data.everyday == 0) {
@@ -121,6 +121,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     backgroundColor: Colors.white,
                     color: PRIMARY_COLOR,
                     onRefresh: () async {
+                      await context.read<TodoTodayBloc>().initializeTodo();
                       setState(() {});
                     },
                     child: Column(
@@ -271,8 +272,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                       ],
                     ),
                   );
+                } else if (snapshot is TodoError) {
+                  return Center(
+                    child: Text(
+                      "Error " + snapshot.error,
+                      style: myTextStyle(),
+                    ),
+                  );
                 } else {
-                  return Center(child: MyCircularProgressIndicator());
+                  return Center(
+                    child: MyCircularProgressIndicator(),
+                  );
                 }
               },
             ),
@@ -579,26 +589,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           },
         );
       },
-    );
-  }
-}
-
-class MyCheckBox extends StatelessWidget {
-  const MyCheckBox({
-    super.key,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final bool value;
-  final void Function(bool?) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Checkbox(
-      activeColor: PRIMARY_COLOR,
-      value: value,
-      onChanged: onChanged,
     );
   }
 }
