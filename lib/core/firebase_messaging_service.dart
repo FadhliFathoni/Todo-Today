@@ -96,6 +96,7 @@ class FirebaseMessagingService {
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
+      icon: "@mipmap/launcher_icon"
     );
 
     const NotificationDetails details =

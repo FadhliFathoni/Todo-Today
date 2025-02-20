@@ -27,29 +27,49 @@ class HistoryState extends State<History> {
     CollectionReference user = firestore.collection(widget.user);
     return Scaffold(
         body: Container(
+      height: height(context),
+      width: width(context),
       color: BG_COLOR,
-      child: BlocBuilder(
-        bloc: HistoryTodoBloc()..getTodo(),
+      child: BlocBuilder<HistoryTodoBloc, HistoryStates>(
         builder: (context, snapshot) {
           if (snapshot is HistoryLoading) {
             return Center(
               child: MyCircularProgressIndicator(),
             );
           } else if (snapshot is HistoryLoaded) {
-            return ListView(
-              children: snapshot.todos.map((e) {
-                var data = e;
-                if (data.done == 1) {
-                  return riwayatCard(
-                      user: user,
-                      title: data.title!,
-                      description: data.description!,
-                      remaining: formatDate(data.date!),
-                      id: data.id!);
-                } else {
-                  return Container();
-                }
-              }).toList(),
+            return RefreshIndicator(
+              backgroundColor: Colors.white,
+              color: PRIMARY_COLOR,
+              onRefresh: () async {
+                context.read<HistoryTodoBloc>().initializeTodo();
+              },
+              child: Column(
+                children: [
+                  SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: snapshot.todos.length,
+                      separatorBuilder: (context, index) =>
+                          SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        var data = snapshot.todos[index];
+                        if (data.done == 1) {
+                          return riwayatCard(
+                            user: user,
+                            title: data.title!,
+                            description: data.description!,
+                            remaining: formatDate(data.date!),
+                            id: data.id!,
+                          );
+                        } else {
+                          return Container();
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
             );
           } else if (snapshot is HistoryError) {
             return Center(

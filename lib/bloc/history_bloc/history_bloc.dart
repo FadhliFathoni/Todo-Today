@@ -6,12 +6,10 @@ import 'package:todo_today/core/hive_service.dart';
 import 'package:todo_today/model/TodoModel.dart';
 
 class HistoryTodoBloc extends Cubit<HistoryStates> {
-  HistoryTodoBloc() : super(HistoryInitial()) {
-    initializeTodo();
-  }
+  HistoryTodoBloc() : super(HistoryInitial()) {}
 
   Future<void> initializeTodo() async {
-    GetIt.I<HiveService>().clearTodo();
+    emit(HistoryLoading());
     List<TodoModel> result = await TodoAPI().getTodo(isHistory: true);
     GetIt.I<HiveService>().initHistoryToday(result);
     if (!isClosed) emit(HistoryLoaded(result));

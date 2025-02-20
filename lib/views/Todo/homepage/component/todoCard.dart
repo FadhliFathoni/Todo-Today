@@ -3,18 +3,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/API/todoAPI.dart';
+import 'package:todo_today/Component/PrimaryTextField.dart';
+import 'package:todo_today/bloc/todo_bloc/todo_bloc.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/model/TodoModel.dart';
 import 'package:todo_today/views/Todo/homepage/Home.dart';
 
-class todoCard extends StatefulWidget {
+class todoCard extends StatelessWidget {
   CollectionReference user;
   String title, description, remaining;
   int id;
   bool isdaily;
-  void Function(void Function()) setState;
   bool? fromUpdate;
 
   todoCard({
@@ -24,34 +26,21 @@ class todoCard extends StatefulWidget {
     required this.remaining,
     required this.id,
     required this.isdaily,
-    required this.setState,
     this.fromUpdate,
   });
 
   @override
-  State<todoCard> createState() => _todoCardState();
-}
-
-class _todoCardState extends State<todoCard> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     var titleController = TextEditingController();
-    titleController.text = widget.title;
+    titleController.text = title;
     var descriptionController = TextEditingController();
-    descriptionController.text = widget.description;
-    var isDaily = widget.isdaily;
-    TimeOfDay time = TimeOfDay.now();
+    descriptionController.text = description;
+    var isDaily = isdaily;
+    TimeOfDay time = convertToTimeOfDay(remaining);
     double height(BuildContext context) => MediaQuery.of(context).size.height;
     double width(BuildContext context) => MediaQuery.of(context).size.width;
 
     return Container(
-      // width: 100,
       margin: EdgeInsets.only(left: 20, right: 20, top: 10),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -76,21 +65,21 @@ class _todoCardState extends State<todoCard> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            widget.title,
+                            title,
                             style: TextStyle(
                                 fontFamily: PRIMARY_FONT,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16),
                           ),
                           Text(
-                            formatDate(widget.remaining),
+                            formatDate(remaining),
                             style: TextStyle(
                                 fontFamily: PRIMARY_FONT, fontSize: 16),
                           )
                         ],
                       ),
                       Text(
-                        widget.description,
+                        description,
                         style: TextStyle(
                             fontFamily: PRIMARY_FONT, color: Colors.grey),
                       ),
@@ -105,6 +94,7 @@ class _todoCardState extends State<todoCard> {
                         height: 28,
                         child: ElevatedButton(
                           onPressed: () {
+                            print("Remaining " + remaining);
                             showDialog(
                               context: context,
                               builder: (context) {
@@ -132,66 +122,15 @@ class _todoCardState extends State<todoCard> {
                                                 fontSize: 18,
                                               ),
                                             )),
-                                            Container(
-                                              margin: EdgeInsets.only(top: 14),
-                                              height: 30,
-                                              child: TextField(
+                                            PrimaryTextField(
                                                 controller: titleController,
-                                                maxLength: 30,
-                                                cursorColor: PRIMARY_COLOR,
-                                                style: TextStyle(
-                                                    fontFamily: PRIMARY_FONT),
-                                                decoration: InputDecoration(
-                                                  counterStyle: TextStyle(
-                                                      fontFamily: PRIMARY_FONT),
-                                                  hintStyle: TextStyle(
-                                                      fontFamily: PRIMARY_FONT),
-                                                  hintText: "Title",
-                                                  enabledBorder:
-                                                      UnderlineInputBorder(
-                                                          borderSide:
-                                                              BorderSide(
-                                                                  color: Colors
-                                                                      .grey)),
-                                                  focusedBorder:
-                                                      UnderlineInputBorder(
-                                                          borderSide: BorderSide(
-                                                              color:
-                                                                  PRIMARY_COLOR)),
-                                                ),
-                                              ),
-                                            ),
-                                            Container(
-                                              height: 30,
-                                              margin: EdgeInsets.symmetric(
-                                                  vertical: 10),
-                                              child: TextField(
+                                                hintText: "Title",
+                                                onChanged: (value) {}),
+                                            PrimaryTextField(
                                                 controller:
                                                     descriptionController,
-                                                maxLength: 50,
-                                                cursorColor: PRIMARY_COLOR,
-                                                style: TextStyle(
-                                                    fontFamily: PRIMARY_FONT),
-                                                decoration: InputDecoration(
-                                                  counterStyle: TextStyle(
-                                                      fontFamily: PRIMARY_FONT),
-                                                  hintStyle: TextStyle(
-                                                      fontFamily: PRIMARY_FONT),
-                                                  hintText: "Description",
-                                                  enabledBorder:
-                                                      UnderlineInputBorder(
-                                                          borderSide:
-                                                              BorderSide(
-                                                                  color: Colors
-                                                                      .grey)),
-                                                  focusedBorder:
-                                                      UnderlineInputBorder(
-                                                          borderSide: BorderSide(
-                                                              color:
-                                                                  PRIMARY_COLOR)),
-                                                ),
-                                              ),
-                                            ),
+                                                hintText: "Description",
+                                                onChanged: (value) {}),
                                             GestureDetector(
                                               child: Row(
                                                 children: [
@@ -291,11 +230,28 @@ class _todoCardState extends State<todoCard> {
                                             height: 28,
                                             width: 81,
                                             child: ElevatedButton(
-                                              onPressed: () {
+                                              onPressed: () async {
                                                 // user.doc(id).delete();
-                                                TodoAPI().delete(widget.id);
-                                                Navigator.pop(context);
-                                                setState(() {});
+                                                var prefs =
+                                                    await SharedPreferences
+                                                        .getInstance();
+                                                var username = await prefs
+                                                    .getString("user");
+                                                TodoAPI().delete(id);
+                                                Navigator.pushReplacement(
+                                                  context,
+                                                  PageRouteBuilder(
+                                                    pageBuilder: (context,
+                                                            animation,
+                                                            secondaryAnimation) =>
+                                                        MainPage(
+                                                            user: username!),
+                                                    transitionDuration:
+                                                        Duration.zero,
+                                                    reverseTransitionDuration:
+                                                        Duration.zero,
+                                                  ),
+                                                );
                                               },
                                               child: Text(
                                                 "Delete",
@@ -328,6 +284,21 @@ class _todoCardState extends State<todoCard> {
                                               // });
                                               // FlutterBackgroundService()
                                               //     .invoke("setAsBackground");
+                                              if (titleController
+                                                      .text.isEmpty ||
+                                                  descriptionController
+                                                      .text.isEmpty) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                        "Title and Description cannot be empty"),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
                                               var prefs =
                                                   await SharedPreferences
                                                       .getInstance();
@@ -341,11 +312,24 @@ class _todoCardState extends State<todoCard> {
                                                 date: formatDateTime(time),
                                                 done: 0,
                                                 username: username,
-                                                id: widget.id,
+                                                id: id,
                                               );
                                               TodoAPI().updateTodo(context,
                                                   todo: todo);
-                                              Navigator.pop(context);
+                                              // Navigator.pop(context);
+                                              Navigator.pushReplacement(
+                                                context,
+                                                PageRouteBuilder(
+                                                  pageBuilder: (context,
+                                                          animation,
+                                                          secondaryAnimation) =>
+                                                      MainPage(user: username!),
+                                                  transitionDuration:
+                                                      Duration.zero,
+                                                  reverseTransitionDuration:
+                                                      Duration.zero,
+                                                ),
+                                              );
                                             },
                                             child: Text(
                                               "Update",
@@ -376,10 +360,21 @@ class _todoCardState extends State<todoCard> {
                       width: 81,
                       height: 28,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
+                          var prefs = await SharedPreferences.getInstance();
+                          var username = await prefs.getString("user");
                           // user.doc(id).update({"status": "Done"});
-                          TodoAPI().doneTodo(widget.id);
-                          widget.setState(() {});
+                          TodoAPI().doneTodo(id);
+                          Navigator.pushReplacement(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) =>
+                                      MainPage(user: username!),
+                              transitionDuration: Duration.zero,
+                              reverseTransitionDuration: Duration.zero,
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                             backgroundColor: PRIMARY_COLOR),
@@ -398,4 +393,9 @@ class _todoCardState extends State<todoCard> {
       ),
     );
   }
+}
+
+TimeOfDay convertToTimeOfDay(String dateTimeString) {
+  DateTime dateTime = DateTime.parse(dateTimeString);
+  return TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
 }

@@ -77,146 +77,80 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference user = firestore.collection(widget.user);
 
-    return Scaffold(
-      backgroundColor: BG_COLOR,
-      body: Container(
-        height: height(context),
-        width: width(context),
-        color: BG_COLOR,
-        child: Stack(
-          children: [
-            BlocBuilder(
-              bloc: TodoTodayBloc()..getTodo(),
-              builder: (context, snapshot) {
-                if (snapshot is TodoLoading) {
-                  return Center(
-                      child: CircularProgressIndicator(color: PRIMARY_COLOR));
-                } else if (snapshot is TodoLoaded) {
-                  int firstIndex = 0;
-                  List<TodoModel> listData = [];
-                  for (int x = 0; x < snapshot.todos.length; x++) {
-                    var data = snapshot.todos[x];
-                    if (data.done != 1) {
-                      if (data.everyday == 1) {
-                        listData.insert(0, data);
-                      } else if (data.everyday == 0) {
-                        listData.add(data);
+    return WillPopScope(
+      onWillPop: () async {
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: BG_COLOR,
+        body: Container(
+          height: height(context),
+          width: width(context),
+          color: BG_COLOR,
+          child: Stack(
+            children: [
+              BlocBuilder<TodoTodayBloc, TodoState>(
+                builder: (context, snapshot) {
+                  if (snapshot is TodoLoading) {
+                    return Center(
+                        child: CircularProgressIndicator(color: PRIMARY_COLOR));
+                  } else if (snapshot is TodoLoaded) {
+                    List<TodoModel> listData = [];
+                    int firstIndex = 0;
+                    for (int x = 0; x < snapshot.todos.length; x++) {
+                      var data = snapshot.todos[x];
+                      if (data.done != 1) {
+                        if (data.everyday == 1) {
+                          listData.insert(0, data);
+                        } else if (data.everyday == 0) {
+                          listData.add(data);
+                        }
                       }
                     }
-                  }
-                  for (int x = 0; x < listData.length; x++) {
-                    print(listData[x]);
-                  }
-                  for (int x = 0; x < listData.length; x++) {
-                    if (listData[x].everyday == 0 && listData[x].done != 1) {
-                      firstIndex = x;
-                      print(firstIndex);
-                      break;
+                    for (int x = 0; x < listData.length; x++) {
+                      print(listData[x]);
                     }
-                  }
-                  for (int x = 0; x < listData.length; x++) {
-                    print(listData[x].everyday);
-                  }
-                  return RefreshIndicator(
-                    backgroundColor: Colors.white,
-                    color: PRIMARY_COLOR,
-                    onRefresh: () async {
-                      await context.read<TodoTodayBloc>().initializeTodo();
-                      setState(() {});
-                    },
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: listData.length,
-                            itemBuilder: (context, index) {
-                              var data = listData[index];
-                              if (data.everyday == 1) {
-                                if (index == 0) {
-                                  return Container(
-                                    height: 250,
-                                    child: Stack(
-                                      children: [
-                                        Stack(
-                                          children: [
-                                            Image.asset(
-                                              "assets/images/batu-daily.png",
-                                              width: 200,
-                                            ),
-                                            Positioned(
-                                              left: 0,
-                                              right: 0,
-                                              top: -50,
-                                              bottom: 0,
-                                              child: Container(
-                                                color: Colors.transparent,
-                                                height: 100,
-                                                width: 100,
-                                                child: Center(
-                                                    child: Text(
-                                                  "Daily",
-                                                  style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontFamily:
-                                                          "DeliciousHandrawn",
-                                                      fontSize: 36),
-                                                )),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        Positioned(
-                                          bottom: 0,
-                                          child: Container(
-                                            width: width(context),
-                                            child: todoCard(
-                                              user: user,
-                                              title: data.title!,
-                                              description: data.description!,
-                                              remaining: data.date!,
-                                              id: data.id!,
-                                              isdaily: data.everyday == 1,
-                                              setState: setState,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                } else {
-                                  return Container(
-                                    width: width(context),
-                                    child: todoCard(
-                                      user: user,
-                                      title: data.title!,
-                                      description: data.description!,
-                                      remaining: data.date!,
-                                      id: data.id!,
-                                      isdaily: data.everyday == 1,
-                                      setState: setState,
-                                    ),
-                                  );
-                                }
-                              } else {
-                                if (index == firstIndex) {
-                                  return Container(
-                                    height: 250,
-                                    child: Stack(
-                                      children: [
-                                        Positioned(
-                                          top: -50,
-                                          right: 0,
-                                          child: Stack(
+                    for (int x = 0; x < listData.length; x++) {
+                      if (listData[x].everyday == 0 && listData[x].done != 1) {
+                        firstIndex = x;
+                        print(firstIndex);
+                        break;
+                      }
+                    }
+                    for (int x = 0; x < listData.length; x++) {
+                      print(listData[x].everyday);
+                    }
+                    return RefreshIndicator(
+                      backgroundColor: Colors.white,
+                      color: PRIMARY_COLOR,
+                      onRefresh: () async {
+                        listData.clear();
+                        await context.read<TodoTodayBloc>().initializeTodo();
+                      },
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: listData.length,
+                              itemBuilder: (context, index) {
+                                var data = listData[index];
+                                if (data.everyday == 1) {
+                                  if (index == 0) {
+                                    return Container(
+                                      height: 250,
+                                      child: Stack(
+                                        children: [
+                                          Stack(
                                             children: [
                                               Image.asset(
-                                                "assets/images/batu-not-daily.png",
-                                                width: 250,
+                                                "assets/images/batu-daily.png",
+                                                width: 200,
                                               ),
                                               Positioned(
                                                 left: 0,
                                                 right: 0,
-                                                top: 10,
+                                                top: -50,
                                                 bottom: 0,
                                                 child: Container(
                                                   color: Colors.transparent,
@@ -224,7 +158,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                                   width: 100,
                                                   child: Center(
                                                       child: Text(
-                                                    "Not Daily",
+                                                    "Daily",
                                                     style: TextStyle(
                                                         color: Colors.white,
                                                         fontFamily:
@@ -235,192 +169,260 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                                               )
                                             ],
                                           ),
-                                        ),
-                                        Positioned(
-                                          bottom: 0,
-                                          child: Container(
-                                            width: width(context),
-                                            child: todoCard(
-                                              user: user,
-                                              title: data.title!,
-                                              description: data.description!,
-                                              remaining: data.date!,
-                                              id: data.id!,
-                                              isdaily: data.everyday == 1,
-                                              setState: setState,
+                                          Positioned(
+                                            bottom: 0,
+                                            child: Container(
+                                              width: width(context),
+                                              child: todoCard(
+                                                user: user,
+                                                title: data.title!,
+                                                description: data.description!,
+                                                remaining: data.date!,
+                                                id: data.id!,
+                                                isdaily: data.everyday == 1,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
+                                        ],
+                                      ),
+                                    );
+                                  } else {
+                                    return Container(
+                                      width: width(context),
+                                      child: todoCard(
+                                        user: user,
+                                        title: data.title!,
+                                        description: data.description!,
+                                        remaining: data.date!,
+                                        id: data.id!,
+                                        isdaily: data.everyday == 1,
+                                      ),
+                                    );
+                                  }
                                 } else {
-                                  return todoCard(
-                                    user: user,
-                                    title: data.title!,
-                                    description: data.description!,
-                                    remaining: data.date!,
-                                    id: data.id!,
-                                    isdaily: data.everyday == 1,
-                                    setState: setState,
-                                  );
+                                  if (index == firstIndex) {
+                                    return Container(
+                                      height: 250,
+                                      child: Stack(
+                                        children: [
+                                          Positioned(
+                                            top: -50,
+                                            right: 0,
+                                            child: Stack(
+                                              children: [
+                                                Image.asset(
+                                                  "assets/images/batu-not-daily.png",
+                                                  width: 250,
+                                                ),
+                                                Positioned(
+                                                  left: 0,
+                                                  right: 0,
+                                                  top: 10,
+                                                  bottom: 0,
+                                                  child: Container(
+                                                    color: Colors.transparent,
+                                                    height: 100,
+                                                    width: 100,
+                                                    child: Center(
+                                                        child: Text(
+                                                      "Not Daily",
+                                                      style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontFamily:
+                                                              "DeliciousHandrawn",
+                                                          fontSize: 36),
+                                                    )),
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                          Positioned(
+                                            bottom: 0,
+                                            child: Container(
+                                              width: width(context),
+                                              child: todoCard(
+                                                user: user,
+                                                title: data.title!,
+                                                description: data.description!,
+                                                remaining: data.date!,
+                                                id: data.id!,
+                                                isdaily: data.everyday == 1,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  } else {
+                                    return todoCard(
+                                      user: user,
+                                      title: data.title!,
+                                      description: data.description!,
+                                      remaining: data.date!,
+                                      id: data.id!,
+                                      isdaily: data.everyday == 1,
+                                    );
+                                  }
                                 }
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                } else if (snapshot is TodoError) {
-                  return Center(
-                    child: Text(
-                      "Error " + snapshot.error,
-                      style: myTextStyle(),
-                    ),
-                  );
-                } else {
-                  return Center(
-                    child: MyCircularProgressIndicator(),
-                  );
-                }
-              },
-            ),
-            Positioned(
-              bottom: 30,
-              right: 30,
-              child: Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  IgnorePointer(
-                    child: Container(
-                      color: Colors.transparent,
-                      width: 150,
-                      height: 150,
-                    ),
-                  ),
-                  Transform.translate(
-                    offset: Offset(degOneTranslationAnimation.value * -100, 0),
-                    child: Transform(
-                      transform:
-                          Matrix4.rotationZ(rotationAnimation.value * 5 / 100)
-                            ..scale(degOneTranslationAnimation.value),
-                      alignment: Alignment.center,
-                      child: CircularButton(
-                        color: PRIMARY_COLOR,
-                        icon: Icons.favorite_border,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return Mainwishlist();
                               },
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  Transform.translate(
-                    offset: Offset(degOneTranslationAnimation.value * -60,
-                        degOneTranslationAnimation.value * -60),
-                    child: Transform(
-                      transform:
-                          Matrix4.rotationZ(rotationAnimation.value * 5 / 100)
-                            ..scale(degOneTranslationAnimation.value),
-                      alignment: Alignment.center,
-                      child: CircularButton(
-                        color: PRIMARY_COLOR,
-                        icon: Icons.attach_money,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return MainFinancial(user: widget.user);
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  Transform.translate(
-                    offset: Offset(0, degOneTranslationAnimation.value * -100),
-                    child: Transform(
-                      transform:
-                          Matrix4.rotationZ(rotationAnimation.value * 5 / 100)
-                            ..scale(degOneTranslationAnimation.value),
-                      alignment: Alignment.center,
-                      child: CircularButton(
-                        color: PRIMARY_COLOR,
-                        icon: Icons.add,
-                        onTap: () {
-                          dialogTambah(context, setState);
-                        },
-                      ),
-                    ),
-                  ),
-                  AnimatedRotation(
-                    alignment: Alignment.center,
-                    turns: turns,
-                    duration: Duration(milliseconds: 200),
-                    child: GestureDetector(
-                      onTap: () {
-                        if (isClicked) {
-                          setState(
-                            () {
-                              turns -= 1 / 4;
-                              animationcontroller.reverse();
-                              fabController.reverse();
-                            },
-                          );
-                        } else {
-                          turns += 1 / 4;
-                          animationcontroller.forward();
-                          fabController.forward();
-                        }
-                        isClicked = !isClicked;
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: PRIMARY_COLOR,
-                          shape: BoxShape.circle,
-                        ),
-                        height: 50,
-                        width: 50,
-                        child: Center(
-                          child: AnimatedIcon(
-                            icon: AnimatedIcons.menu_close,
-                            progress: fabController,
-                            size: 28,
-                            color: Colors.white,
                           ),
-                        ),
+                        ],
                       ),
-                    ),
-                  ),
-                  // Transform(
-                  //   transform:
-                  //       Matrix4.rotationZ(rotationAnimation.value * 7 / 100),
-                  //   alignment: Alignment.center,
-                  //   child: CircularButton(
-                  //     color: PRIMARY_COLOR,
-                  //     icon: Icons.menu,
-                  //     onTap: () {
-                  //       if (animationcontroller.isCompleted) {
-                  //         animationcontroller.reverse();
-                  //       } else {
-                  //         animationcontroller.forward();
-                  //       }
-                  //     },
-                  //   ),
-                  // ),
-                ],
+                    );
+                  } else if (snapshot is TodoError) {
+                    return Center(
+                      child: Text(
+                        "Error " + snapshot.error,
+                        style: myTextStyle(),
+                      ),
+                    );
+                  } else {
+                    return Center(
+                      child: Container(),
+                    );
+                  }
+                },
               ),
-            ),
-          ],
+              Positioned(
+                bottom: 30,
+                right: 30,
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    IgnorePointer(
+                      child: Container(
+                        color: Colors.transparent,
+                        width: 150,
+                        height: 150,
+                      ),
+                    ),
+                    Transform.translate(
+                      offset:
+                          Offset(degOneTranslationAnimation.value * -100, 0),
+                      child: Transform(
+                        transform:
+                            Matrix4.rotationZ(rotationAnimation.value * 5 / 100)
+                              ..scale(degOneTranslationAnimation.value),
+                        alignment: Alignment.center,
+                        child: CircularButton(
+                          color: PRIMARY_COLOR,
+                          icon: Icons.favorite_border,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return Mainwishlist();
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    Transform.translate(
+                      offset: Offset(degOneTranslationAnimation.value * -60,
+                          degOneTranslationAnimation.value * -60),
+                      child: Transform(
+                        transform:
+                            Matrix4.rotationZ(rotationAnimation.value * 5 / 100)
+                              ..scale(degOneTranslationAnimation.value),
+                        alignment: Alignment.center,
+                        child: CircularButton(
+                          color: PRIMARY_COLOR,
+                          icon: Icons.attach_money,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return MainFinancial(user: widget.user);
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    Transform.translate(
+                      offset:
+                          Offset(0, degOneTranslationAnimation.value * -100),
+                      child: Transform(
+                        transform:
+                            Matrix4.rotationZ(rotationAnimation.value * 5 / 100)
+                              ..scale(degOneTranslationAnimation.value),
+                        alignment: Alignment.center,
+                        child: CircularButton(
+                          color: PRIMARY_COLOR,
+                          icon: Icons.add,
+                          onTap: () {
+                            dialogTambah(context, setState);
+                          },
+                        ),
+                      ),
+                    ),
+                    AnimatedRotation(
+                      alignment: Alignment.center,
+                      turns: turns,
+                      duration: Duration(milliseconds: 200),
+                      child: GestureDetector(
+                        onTap: () {
+                          if (isClicked) {
+                            setState(
+                              () {
+                                turns -= 1 / 4;
+                                animationcontroller.reverse();
+                                fabController.reverse();
+                              },
+                            );
+                          } else {
+                            turns += 1 / 4;
+                            animationcontroller.forward();
+                            fabController.forward();
+                          }
+                          isClicked = !isClicked;
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: PRIMARY_COLOR,
+                            shape: BoxShape.circle,
+                          ),
+                          height: 50,
+                          width: 50,
+                          child: Center(
+                            child: AnimatedIcon(
+                              icon: AnimatedIcons.menu_close,
+                              progress: fabController,
+                              size: 28,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Transform(
+                    //   transform:
+                    //       Matrix4.rotationZ(rotationAnimation.value * 7 / 100),
+                    //   alignment: Alignment.center,
+                    //   child: CircularButton(
+                    //     color: PRIMARY_COLOR,
+                    //     icon: Icons.menu,
+                    //     onTap: () {
+                    //       if (animationcontroller.isCompleted) {
+                    //         animationcontroller.reverse();
+                    //       } else {
+                    //         animationcontroller.forward();
+                    //       }
+                    //     },
+                    //   ),
+                    // ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -548,42 +550,53 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               ),
               actions: [
                 Container(
-                    margin: EdgeInsets.only(right: 14),
-                    height: 28,
-                    width: 81,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        // await user.add({
-                        //   "title": title.text,
-                        //   "description": description.text,
-                        //   "date": DateTime.now().toString(),
-                        //   "hour": "${time.hour}",
-                        //   "minute": "${time.minute}",
-                        //   "status": "Not done yet",
-                        //   "daily": isDaily
-                        // });
-                        var prefs = await SharedPreferences.getInstance();
-                        var username = await prefs.getString("user");
-                        var data = TodoModel(
-                          title: title.text,
-                          description: description.text,
-                          date: formatDateTime(time),
-                          done: 0,
-                          everyday: (isDaily) ? 1 : 0,
-                          username: username,
+                  margin: EdgeInsets.only(right: 14),
+                  height: 28,
+                  width: 81,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (title.text.isEmpty || description.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                Text("Title and Description cannot be empty"),
+                            backgroundColor: Colors.red,
+                          ),
                         );
-                        TodoAPI().registerTodo(context, todo: data);
-                        setState(() {});
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "Create",
-                        style: TextStyle(
-                            fontFamily: PRIMARY_FONT, color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: PRIMARY_COLOR),
-                    )),
+                        return;
+                      }
+
+                      var prefs = await SharedPreferences.getInstance();
+                      var username = await prefs.getString("user");
+                      var data = TodoModel(
+                        title: title.text,
+                        description: description.text,
+                        date: formatDateTime(time),
+                        done: 0,
+                        everyday: (isDaily) ? 1 : 0,
+                        username: username,
+                      );
+                      TodoAPI().registerTodo(context, todo: data);
+                      Navigator.pushReplacement(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  MainPage(user: username!),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      "Create",
+                      style: TextStyle(
+                          fontFamily: PRIMARY_FONT, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: PRIMARY_COLOR),
+                  ),
+                ),
               ],
             );
           },

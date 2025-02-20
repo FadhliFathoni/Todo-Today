@@ -140,6 +140,7 @@ class _MainPageState extends State<MainPage> {
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,
           centerTitle: true,
+          leading: Container(),
           title: GestureDetector(
             onTap: () async {
               FlutterBackgroundService().invoke("stopService");

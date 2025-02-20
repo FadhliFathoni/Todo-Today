@@ -17,27 +17,37 @@ class HiveService {
 
     if (!Hive.isBoxOpen(_keyTodoToday)) {
       Hive.registerAdapter(TodoModelAdapter());
-      await Hive.openBox<List<TodoModel>>(_keyTodoToday);
+      await Hive.openBox<TodoModel>(_keyTodoToday);
     }
     if (!Hive.isBoxOpen(_keyHistoryToday)) {
-      await Hive.openBox<List<TodoModel>>(_keyHistoryToday);
+      await Hive.openBox<TodoModel>(_keyHistoryToday);
     }
   }
 
   List<TodoModel>? getTodoToday() {
-    return Hive.box<List<TodoModel>>(_keyTodoToday).get(0);
+    final box = Hive.box<TodoModel>(_keyTodoToday);
+    return box.values.toList();
   }
 
-  void initTodoToday(List<TodoModel> todos) {
-    Hive.box<List<TodoModel>>(_keyTodoToday).put(0, todos);
+  void initTodoToday(List<TodoModel> todos) async {
+    final box = Hive.box<TodoModel>(_keyTodoToday);
+    await box.clear();
+    for (var todo in todos) {
+      await box.put(todo.id, todo);
+    }
   }
 
   List<TodoModel>? getHistoryToday() {
-    return Hive.box<List<TodoModel>>(_keyHistoryToday).get(0);
+    final box = Hive.box<TodoModel>(_keyHistoryToday);
+    return box.values.toList();
   }
 
-  void initHistoryToday(List<TodoModel> todos) {
-    Hive.box<List<TodoModel>>(_keyHistoryToday).put(0, todos);
+  void initHistoryToday(List<TodoModel> todos) async {
+    final box = Hive.box<TodoModel>(_keyHistoryToday);
+    await box.clear();
+    for (var todo in todos) {
+      await box.put(todo.id, todo);
+    }
   }
 
   Future<void> clearTodo() async =>
