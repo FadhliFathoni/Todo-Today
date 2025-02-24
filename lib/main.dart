@@ -1,7 +1,6 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors, sized_box_for_whitespace, must_be_immutable
 
 import 'package:dio/dio.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,7 +9,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/bloc/history_bloc/history_bloc.dart';
 import 'package:todo_today/bloc/todo_bloc/todo_bloc.dart';
-import 'package:todo_today/core/background.dart';
 import 'package:todo_today/core/firebase_messaging_service.dart';
 import 'package:todo_today/core/get_it.dart';
 import 'package:todo_today/core/hive_service.dart';
@@ -20,13 +18,13 @@ import 'package:todo_today/views/loginpage/LoginPage.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import "package:flutter_widgetkit/flutter_widgetkit.dart";
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Color PRIMARY_COLOR = Color.fromARGB(255, 164, 83, 56);
 Color BG_COLOR = Color.fromARGB(255, 193, 200, 192);
 String PRIMARY_FONT = "DeliciousHandrawn";
 FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 double height(BuildContext context) => MediaQuery.of(context).size.height;
 double width(BuildContext context) => MediaQuery.of(context).size.width;
@@ -62,6 +60,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        navigatorKey: navigatorKey,
+        onGenerateRoute: (settings) {
+          if (settings.name == '/main') {
+            final username = settings.arguments as String; // Ambil argument dari Navigator
+            return MaterialPageRoute(
+              builder: (context) => MainPage(user: username),
+            );
+          }
+          return null; // Jika route tidak dikenali
+        },
+
         color: Colors.white,
         title: "Todo Today",
         debugShowCheckedModeBanner: false,

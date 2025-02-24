@@ -11,7 +11,6 @@ import 'package:todo_today/Component/FormattedDateTime.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/mainWishList.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 TextStyle myTextStyle({double? size, FontWeight? fontWeight, Color? color}) {
   return TextStyle(

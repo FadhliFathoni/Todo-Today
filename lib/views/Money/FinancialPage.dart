@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:todo_today/Component/FormattedDateTime.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/main.dart';
-import 'package:todo_today/mainWishList.dart';
 import 'package:todo_today/views/Money/ListWalletPage.dart';
 import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 

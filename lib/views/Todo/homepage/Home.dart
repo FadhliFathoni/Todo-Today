@@ -435,169 +435,175 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     TextEditingController title = TextEditingController();
     TextEditingController description = TextEditingController();
     bool isDaily = false;
+    var todoBloc = context.read<TodoTodayBloc>();
     return showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              content: Container(
-                width: width(context) * 0.7,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Heading1(
-                        color: PRIMARY_COLOR,
-                        text: "Create",
+            return BlocProvider(
+              create: (context) => TodoTodayBloc(),
+              child: AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                content: Container(
+                  width: width(context) * 0.7,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Heading1(
+                          color: PRIMARY_COLOR,
+                          text: "Create",
+                        ),
                       ),
-                    ),
-                    PrimaryTextField(
-                      controller: title,
-                      hintText: "Title",
-                      maxLength: 30,
-                      onChanged: (value) {},
-                    ),
-                    PrimaryTextField(
-                      controller: description,
-                      maxLength: 50,
-                      hintText: "Description",
-                      onChanged: (value) {},
-                    ),
-                    GestureDetector(
-                      child: Row(
-                        children: [
-                          Container(
-                            child: ParagraphText(
-                              text: "${time.hour}",
-                              color: Colors.black54,
-                            ),
-                            decoration: BoxDecoration(
-                                border: Border(
-                                    bottom: BorderSide(color: Colors.grey))),
-                          ),
-                          Text(":"),
-                          Container(
-                            child: ParagraphText(
-                              text: "${time.minute}",
-                              color: Colors.black54,
-                            ),
-                            decoration: BoxDecoration(
-                                border: Border(
-                                    bottom: BorderSide(color: Colors.grey))),
-                          )
-                        ],
+                      PrimaryTextField(
+                        controller: title,
+                        hintText: "Title",
+                        maxLength: 30,
+                        onChanged: (value) {},
                       ),
-                      onTap: () async {
-                        final TimeOfDay? picked = await showTimePicker(
-                          context: context,
-                          initialTime: time,
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: ColorScheme.light(
-                                  primary:
-                                      PRIMARY_COLOR, // Warna utama (misal, warna tombol OK)
-                                  onPrimary: Colors
-                                      .white, // Warna teks di atas primary
-                                  onSurface: Colors
-                                      .black, // Warna teks di atas background
-                                ),
-                                dialogBackgroundColor:
-                                    Colors.white, // Warna background picker
-                                textButtonTheme: TextButtonThemeData(
-                                  style: TextButton.styleFrom(
-                                    foregroundColor:
-                                        PRIMARY_COLOR, // Warna tombol Cancel
+                      PrimaryTextField(
+                        controller: description,
+                        maxLength: 50,
+                        hintText: "Description",
+                        onChanged: (value) {},
+                      ),
+                      GestureDetector(
+                        child: Row(
+                          children: [
+                            Container(
+                              child: ParagraphText(
+                                text: "${time.hour}",
+                                color: Colors.black54,
+                              ),
+                              decoration: BoxDecoration(
+                                  border: Border(
+                                      bottom: BorderSide(color: Colors.grey))),
+                            ),
+                            Text(":"),
+                            Container(
+                              child: ParagraphText(
+                                text: "${time.minute}",
+                                color: Colors.black54,
+                              ),
+                              decoration: BoxDecoration(
+                                  border: Border(
+                                      bottom: BorderSide(color: Colors.grey))),
+                            )
+                          ],
+                        ),
+                        onTap: () async {
+                          final TimeOfDay? picked = await showTimePicker(
+                            context: context,
+                            initialTime: time,
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: ColorScheme.light(
+                                    primary:
+                                        PRIMARY_COLOR, // Warna utama (misal, warna tombol OK)
+                                    onPrimary: Colors
+                                        .white, // Warna teks di atas primary
+                                    onSurface: Colors
+                                        .black, // Warna teks di atas background
+                                  ),
+                                  dialogBackgroundColor:
+                                      Colors.white, // Warna background picker
+                                  textButtonTheme: TextButtonThemeData(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor:
+                                          PRIMARY_COLOR, // Warna tombol Cancel
+                                    ),
                                   ),
                                 ),
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            time = picked;
-                          });
-                        }
-                      },
-                    ),
-                    Row(
-                      children: [
-                        MyCheckBox(
-                          value: isDaily,
-                          onChanged: (value) {
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
                             setState(() {
-                              isDaily = !isDaily;
+                              time = picked;
                             });
-                          },
-                        ),
-                        ParagraphText(
-                          text: "Everyday",
-                          color: (isDaily == false)
-                              ? Colors.black54
-                              : PRIMARY_COLOR,
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-              ),
-              actions: [
-                Container(
-                  margin: EdgeInsets.only(right: 14),
-                  height: 28,
-                  width: 81,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (title.text.isEmpty || description.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content:
-                                Text("Title and Description cannot be empty"),
-                            backgroundColor: Colors.red,
+                          }
+                        },
+                      ),
+                      Row(
+                        children: [
+                          MyCheckBox(
+                            value: isDaily,
+                            onChanged: (value) {
+                              setState(() {
+                                isDaily = !isDaily;
+                              });
+                            },
                           ),
-                        );
-                        return;
-                      }
-
-                      var prefs = await SharedPreferences.getInstance();
-                      var username = await prefs.getString("user");
-                      var data = TodoModel(
-                        title: title.text,
-                        description: description.text,
-                        date: formatDateTime(time),
-                        done: 0,
-                        everyday: (isDaily) ? 1 : 0,
-                        username: username,
-                      );
-                      TodoAPI().registerTodo(context, todo: data);
-                      Navigator.pushReplacement(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder:
-                              (context, animation, secondaryAnimation) =>
-                                  MainPage(user: username!),
-                          transitionDuration: Duration.zero,
-                          reverseTransitionDuration: Duration.zero,
-                        ),
-                      );
-                    },
-                    child: Text(
-                      "Create",
-                      style: TextStyle(
-                          fontFamily: PRIMARY_FONT, color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: PRIMARY_COLOR),
+                          ParagraphText(
+                            text: "Everyday",
+                            color: (isDaily == false)
+                                ? Colors.black54
+                                : PRIMARY_COLOR,
+                          ),
+                        ],
+                      )
+                    ],
                   ),
                 ),
-              ],
+                actions: [
+                  Container(
+                    margin: EdgeInsets.only(right: 14),
+                    height: 28,
+                    width: 81,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (title.text.isEmpty || description.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text("Title and Description cannot be empty"),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        var prefs = await SharedPreferences.getInstance();
+                        var username = await prefs.getString("user");
+                        var data = TodoModel(
+                          title: title.text,
+                          description: description.text,
+                          date: formatDateTime(time),
+                          done: 0,
+                          everyday: (isDaily) ? 1 : 0,
+                          username: username,
+                        );
+                        TodoAPI().registerTodo(context, todo: data);
+                        await todoBloc.initializeTodo();
+                        // Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    MainPage(user: username!),
+                            transitionDuration: Duration.zero,
+                            reverseTransitionDuration: Duration.zero,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        "Create",
+                        style: TextStyle(
+                            fontFamily: PRIMARY_FONT, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: PRIMARY_COLOR),
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
