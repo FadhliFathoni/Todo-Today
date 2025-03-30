@@ -9,6 +9,8 @@ class PrimaryTextField extends StatelessWidget {
   TextInputType? textInputType = TextInputType.text;
   final void Function(String) onChanged;
   bool? enabled;
+  bool? obscureText;
+  Widget? suffixWidget;
 
   PrimaryTextField({
     super.key,
@@ -19,6 +21,8 @@ class PrimaryTextField extends StatelessWidget {
     required this.onChanged,
     this.textInputType,
     this.enabled,
+    this.obscureText,
+    this.suffixWidget,
   });
 
   @override
@@ -29,6 +33,7 @@ class PrimaryTextField extends StatelessWidget {
         data: TextSelectionThemeData(
             selectionColor: BG_COLOR, selectionHandleColor: PRIMARY_COLOR),
         child: TextField(
+          obscureText: obscureText ?? false,
           enabled: enabled ?? true,
           keyboardType: textInputType,
           onChanged: onChanged,
@@ -38,6 +43,7 @@ class PrimaryTextField extends StatelessWidget {
           cursorColor: PRIMARY_COLOR,
           style: TextStyle(fontFamily: PRIMARY_FONT),
           decoration: InputDecoration(
+            suffix: suffixWidget,
             counterStyle: TextStyle(fontFamily: PRIMARY_FONT),
             hintStyle: TextStyle(fontFamily: PRIMARY_FONT),
             contentPadding: EdgeInsets.symmetric(vertical: 0),

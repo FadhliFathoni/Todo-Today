@@ -12,6 +12,8 @@ import 'package:todo_today/bloc/todo_bloc/todo_bloc.dart';
 import 'package:todo_today/core/firebase_messaging_service.dart';
 import 'package:todo_today/core/get_it.dart';
 import 'package:todo_today/core/hive_service.dart';
+import 'package:todo_today/mainFinancial.dart';
+import 'package:todo_today/views/SplashScreen/SplashScreenPage.dart';
 import 'package:todo_today/views/history/History.dart';
 import 'package:todo_today/views/Todo/homepage/Home.dart';
 import 'package:todo_today/views/loginpage/LoginPage.dart';
@@ -60,21 +62,22 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        navigatorKey: navigatorKey,
-        onGenerateRoute: (settings) {
-          if (settings.name == '/main') {
-            final username = settings.arguments as String; // Ambil argument dari Navigator
-            return MaterialPageRoute(
-              builder: (context) => MainPage(user: username),
-            );
-          }
-          return null; // Jika route tidak dikenali
-        },
-
-        color: Colors.white,
-        title: "Todo Today",
-        debugShowCheckedModeBanner: false,
-        home: LoginPage());
+      navigatorKey: navigatorKey,
+      onGenerateRoute: (settings) {
+        if (settings.name == '/main') {
+          final username =
+              settings.arguments as String; // Ambil argument dari Navigator
+          return MaterialPageRoute(
+            builder: (context) => MainPage(user: username),
+          );
+        }
+        return null; // Jika route tidak dikenali
+      },
+      color: Colors.white,
+      title: "Todo Today",
+      debugShowCheckedModeBanner: false,
+      home: SplashScreenPage(),
+    );
   }
 }
 
@@ -95,10 +98,12 @@ class _MainPageState extends State<MainPage> {
   int currentIndex = 0;
   bool isDaily = false;
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+  String userName = "";
 
   @override
   void initState() {
     super.initState();
+    userName = String.fromEnvironment('USER_NAME', defaultValue: '');
     var initializationSettingsAndroid =
         const AndroidInitializationSettings('@mipmap/ic_launcher');
     var initializationSettings =
@@ -123,6 +128,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    const userName = String.fromEnvironment('USER_NAME', defaultValue: 'Guest');
     return MultiBlocProvider(
       providers: [
         BlocProvider(
