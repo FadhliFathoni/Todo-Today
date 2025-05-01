@@ -16,7 +16,7 @@ TextStyle myTextStyle({double? size, FontWeight? fontWeight, Color? color}) {
   return TextStyle(
     fontSize: size ?? 14,
     fontWeight: fontWeight ?? FontWeight.normal,
-    color: color ?? Colors.black.withOpacity(0.8),
+    color: color ?? PRIMARY_COLOR,
     fontFamily: PRIMARY_FONT,
   );
 }

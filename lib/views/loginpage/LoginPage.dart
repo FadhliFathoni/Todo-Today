@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/main.dart';
+import 'package:todo_today/views/notes/mainNotes.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -21,7 +22,8 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       // await initializeService();
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
-        return MainPage(user: prefs.getString('user')!);
+        // return MainPage(user: prefs.getString('user')!);
+        return NotesPage(user: prefs.getString('user')!);
       }));
     }
   }
@@ -50,40 +52,52 @@ class _LoginPageState extends State<LoginPage> {
                     borderRadius: BorderRadius.circular(20),
                     color: Colors.white,
                   ),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
-                    Container(
-                      margin: EdgeInsets.only(top: 14),
-                      child: Text(
-                        "Account",
-                        style: TextStyle(fontFamily: PRIMARY_FONT, color: PRIMARY_COLOR, fontSize: 16, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    ListView.builder(
-                        itemCount: person.length,
-                        shrinkWrap: true,
-                        itemBuilder: (context, index) {
-                          return Center(
-                              child: TextButton(
-                            onPressed: () async {
-                              final prefs = await SharedPreferences.getInstance();
-                              String name = person[index];
-                              // await initializeService();
-                              prefs.remove('user');
-                              prefs.setString('user', name);
-                              Navigator.pushReplacement(context, MaterialPageRoute(
-                                builder: (context) {
-                                  return MainPage(user: name);
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          margin: EdgeInsets.only(top: 14),
+                          child: Text(
+                            "Account",
+                            style: TextStyle(
+                                fontFamily: PRIMARY_FONT,
+                                color: PRIMARY_COLOR,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        ListView.builder(
+                            itemCount: person.length,
+                            shrinkWrap: true,
+                            itemBuilder: (context, index) {
+                              return Center(
+                                  child: TextButton(
+                                onPressed: () async {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  String name = person[index];
+                                  // await initializeService();
+                                  prefs.remove('user');
+                                  prefs.setString('user', name);
+                                  Navigator.pushReplacement(context,
+                                      MaterialPageRoute(
+                                    builder: (context) {
+                                      return MainPage(user: name);
+                                    },
+                                  ));
                                 },
+                                child: Text(
+                                  person[index],
+                                  style: TextStyle(
+                                      fontFamily: "DeliciousHandrawn",
+                                      fontSize: 16),
+                                ),
+                                style: TextButton.styleFrom(
+                                    foregroundColor: Colors.black),
                               ));
-                            },
-                            child: Text(
-                              person[index],
-                              style: TextStyle(fontFamily: "DeliciousHandrawn", fontSize: 16),
-                            ),
-                            style: TextButton.styleFrom(foregroundColor: Colors.black),
-                          ));
-                        })
-                  ]),
+                            })
+                      ]),
                 ),
               )
             ],
