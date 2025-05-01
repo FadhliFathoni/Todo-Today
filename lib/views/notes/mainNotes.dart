@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
-import 'package:todo_today/Component/Text/Heading3.dart';
 import 'package:todo_today/Component/Text/MyTextStyle.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
-import 'package:todo_today/views/notes/addNotePage.dart';
 import 'package:todo_today/views/notes/folderPage.dart';
 
 class NotesPage extends StatefulWidget {
@@ -47,126 +45,214 @@ class _NotesPageState extends State<NotesPage> {
     return Scaffold(
       backgroundColor: BG_COLOR,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         centerTitle: true,
         title: Heading1(
           text: 'Catatan',
           color: PRIMARY_COLOR,
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              cursorColor: PRIMARY_COLOR,
-              controller: _searchController,
-              style: MyTextStyle(
-                  fontSize: 16, color: PRIMARY_COLOR), // <-- warna text user
-              decoration: InputDecoration(
-                hintText: 'Nyari folder apa?',
-                hintStyle:
-                    MyTextStyle(fontSize: 14, color: Colors.grey), // warna hint
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.white70,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              ),
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream:
-                  kategori.orderBy('createdAt', descending: true).snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData)
-                  return const Center(child: CircularProgressIndicator());
+      body: StreamBuilder<QuerySnapshot>(
+        stream: kategori.orderBy('createdAt', descending: true).snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData)
+            return Center(
+                child: CircularProgressIndicator(
+              color: PRIMARY_COLOR,
+            ));
 
-                var list = snapshot.data!.docs;
-                if (searchQuery.isNotEmpty) {
-                  list = list.where((doc) {
-                    var name = doc['name'].toLowerCase();
-                    return name.contains(searchQuery);
-                  }).toList();
-                }
+          var list = snapshot.data!.docs;
+          if (searchQuery.isNotEmpty) {
+            list = list.where((doc) {
+              var name = doc['name'].toLowerCase();
+              return name.contains(searchQuery);
+            }).toList();
+          }
 
-                return ListView.separated(
-                  itemCount: list.length,
-                  separatorBuilder: (context, index) => SizedBox(
-                    height: 12,
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: list.length + 1,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: TextField(
+                    cursorColor: PRIMARY_COLOR,
+                    controller: _searchController,
+                    style: MyTextStyle(fontSize: 16, color: PRIMARY_COLOR),
+                    decoration: InputDecoration(
+                      hintText: 'Nyari folder apa?',
+                      hintStyle: MyTextStyle(fontSize: 14, color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white70,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                    ),
                   ),
-                  itemBuilder: (context, index) {
-                    var doc = list[index];
-                    return Container(
-                      margin: EdgeInsets.symmetric(horizontal: 12),
-                      child: ListTile(
-                        title: Text(
-                          doc['name'],
-                          style: MyTextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                );
+              }
+
+              var doc = list[index - 1];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                child: ListTile(
+                  title: Text(
+                    doc['name'],
+                    style:
+                        MyTextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  trailing: Icon(Icons.arrow_forward_ios,
+                      size: 16, color: PRIMARY_COLOR),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  tileColor: Colors.white70,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FolderPage(
+                          user: widget.user,
+                          folderId: doc.id,
+                          folderName: doc['name'],
                         ),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: PRIMARY_COLOR,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        tileColor: Colors.white70,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FolderPage(
-                                user: widget.user,
-                                folderId: doc.id,
-                                folderName: doc['name'],
-                              ),
-                            ),
-                          );
-                        },
-                        onLongPress: () async {
-                          bool? confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Hapus Folder?'),
-                              content: const Text(
-                                  'Semua catatan dalam folder ini juga akan terhapus.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text('Batal'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Hapus'),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirm == true) {
-                            await kategori.doc(doc.id).delete();
-                          }
-                        },
                       ),
                     );
                   },
-                );
-              },
-            ),
-          ),
-        ],
+                  onLongPress: () async {
+                    String folderId = doc.id;
+                    String folderName = doc['name'];
+
+                    await showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(16)),
+                      ),
+                      builder: (context) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: Icon(Icons.edit, color: PRIMARY_COLOR),
+                            title:
+                                Text('Edit Nama Folder', style: myTextStyle()),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              TextEditingController nameController =
+                                  TextEditingController(text: folderName);
+
+                              await showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text('Edit Nama Folder',
+                                      style: myTextStyle(size: 18)),
+                                  content: TextField(
+                                    controller: nameController,
+                                    cursorColor: PRIMARY_COLOR,
+                                    style: myTextStyle(),
+                                    decoration: InputDecoration(
+                                      hintText: 'Nama folder baru',
+                                      hintStyle: myTextStyle(
+                                          size: 14, color: Colors.grey),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide:
+                                            BorderSide(color: PRIMARY_COLOR),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                            color: PRIMARY_COLOR, width: 2),
+                                      ),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text('Batal',
+                                          style:
+                                              myTextStyle(color: Colors.grey)),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        String newName =
+                                            nameController.text.trim();
+                                        if (newName.isNotEmpty) {
+                                          await kategori
+                                              .doc(folderId)
+                                              .update({'name': newName});
+                                          Navigator.pop(context);
+                                        }
+                                      },
+                                      child: Text(
+                                        'Simpan',
+                                        style: myTextStyle(
+                                            color: PRIMARY_COLOR,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          ListTile(
+                            leading: Icon(Icons.delete, color: Colors.red),
+                            title: Text('Hapus Folder',
+                                style: myTextStyle(color: Colors.red)),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              bool? confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  title: Text('Hapus Folder?',
+                                      style: myTextStyle(size: 18)),
+                                  content: Text(
+                                    'Semua catatan dalam folder ini juga akan terhapus.',
+                                    style: myTextStyle(),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: Text('Batal',
+                                          style:
+                                              myTextStyle(color: Colors.grey)),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: Text('Hapus',
+                                          style:
+                                              myTextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                await kategori.doc(folderId).delete();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white70,
@@ -260,24 +346,6 @@ class _NotesPageState extends State<NotesPage> {
           Icons.create_new_folder,
           color: PRIMARY_COLOR,
         ),
-      ),
-    );
-  }
-}
-
-class NotesCard extends StatelessWidget {
-  const NotesCard({super.key, required this.title});
-  final String title;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-      ),
-      child: Text(
-        title,
-        style: myTextStyle(size: 12),
       ),
     );
   }

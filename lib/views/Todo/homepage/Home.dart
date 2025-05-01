@@ -19,6 +19,7 @@ import 'package:todo_today/model/TodoModel.dart';
 import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 import 'package:todo_today/views/Todo/homepage/component/MyCheckBox.dart';
 import 'package:todo_today/views/Todo/homepage/component/todoCard.dart';
+import 'package:todo_today/views/notes/mainNotes.dart';
 
 class Home extends StatefulWidget {
   String user;
@@ -356,9 +357,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                         alignment: Alignment.center,
                         child: CircularButton(
                           color: PRIMARY_COLOR,
-                          icon: Icons.add,
+                          icon: Icons.note_add_outlined,
                           onTap: () {
-                            dialogTambah(context, setState);
+                            // dialogTambah(context, setState);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    NotesPage(user: widget.user),
+                              ),
+                            );
                           },
                         ),
                       ),

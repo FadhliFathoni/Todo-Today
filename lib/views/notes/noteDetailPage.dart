@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:todo_today/main.dart';
+import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 
 class NoteDetailPage extends StatefulWidget {
   final String user;
@@ -25,26 +26,38 @@ class NoteDetailPage extends StatefulWidget {
 
 class _NoteDetailPageState extends State<NoteDetailPage> {
   late TextEditingController descController;
+  late TextEditingController titleController;
   late String originalText;
+  late String originalTitle;
+  late String noteTitle;
   bool isEditMode = false;
 
   @override
   void initState() {
     super.initState();
     originalText = widget.description;
+    originalTitle = widget.title;
+    noteTitle = widget.title;
+
     descController = TextEditingController(text: originalText);
+    titleController = TextEditingController(text: noteTitle);
+
     descController.addListener(_autoSaveNote);
+    titleController.addListener(_autoSaveNote);
   }
 
   @override
   void dispose() {
     descController.removeListener(_autoSaveNote);
+    titleController.removeListener(_autoSaveNote);
     descController.dispose();
+    titleController.dispose();
     super.dispose();
   }
 
   void _autoSaveNote() async {
-    if (descController.text != originalText) {
+    if (descController.text != originalText ||
+        titleController.text != originalTitle) {
       await FirebaseFirestore.instance
           .collection('notes')
           .doc(widget.user)
@@ -53,62 +66,74 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
           .collection('notes')
           .doc(widget.noteId)
           .update({
+        'title': titleController.text,
         'description': descController.text,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
       originalText = descController.text;
+      originalTitle = titleController.text;
     }
   }
 
-  void _undoChanges() {
-    setState(() {
-      descController.text = originalText;
-    });
+  void _toggleBold() {
+    final selection = descController.selection;
+    final text = descController.text;
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Perubahan dibatalkan')));
+    if (selection.start >= 0 && selection.end > selection.start) {
+      final selectedText = text.substring(selection.start, selection.end);
+      final newText = text.replaceRange(
+          selection.start, selection.end, '**$selectedText**');
+
+      descController.text = newText;
+      descController.selection = TextSelection.collapsed(
+          offset: selection.start + selectedText.length + 4);
+    }
   }
 
   Widget _buildFormattedText(String text) {
-    final regex = RegExp(r'==(.+?)==', multiLine: true);
     final spans = <InlineSpan>[];
-
+    final regex = RegExp(r'==(.+?)==|\*\*(.+?)\*\*');
     int lastIndex = 0;
+
     for (final match in regex.allMatches(text)) {
       if (match.start > lastIndex) {
         spans.add(TextSpan(text: text.substring(lastIndex, match.start)));
       }
 
-      final highlightedText = match.group(1)!;
-
-      spans.add(WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: GestureDetector(
-          onLongPress: () {
-            Clipboard.setData(ClipboardData(text: highlightedText));
-          },
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              highlightedText,
-              style: TextStyle(fontWeight: FontWeight.bold),
+      if (match.group(1) != null) {
+        // Highlighted text
+        final highlightedText = match.group(1)!;
+        spans.add(WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: GestureDetector(
+            onLongPress: () {
+              Clipboard.setData(ClipboardData(text: highlightedText));
+            },
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(highlightedText),
             ),
           ),
-        ),
-      ));
+        ));
+      } else if (match.group(2) != null) {
+        // Bold text
+        final boldText = match.group(2)!;
+        spans.add(TextSpan(
+            text: boldText, style: TextStyle(fontWeight: FontWeight.bold)));
+      }
 
       lastIndex = match.end;
     }
@@ -131,19 +156,46 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
       backgroundColor: Color.fromARGB(255, 245, 245, 245),
       appBar: AppBar(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         leading: BackButton(color: PRIMARY_COLOR),
-        title: Text(
-          widget.title,
-          style: TextStyle(
-              fontSize: 18, color: PRIMARY_COLOR, fontWeight: FontWeight.bold),
-        ),
+        title: isEditMode
+            ? SizedBox(
+                width: 200,
+                child: TextField(
+                  cursorColor: PRIMARY_COLOR,
+                  controller: titleController,
+                  style: myTextStyle(
+                      size: 18,
+                      color: PRIMARY_COLOR,
+                      fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                      hintText: "Judul catatan di sini...",
+                      border: InputBorder.none,
+                      isCollapsed: true,
+                      hintStyle: myTextStyle()),
+                  onChanged: (value) {
+                    setState(() {
+                      noteTitle = value;
+                    });
+                  },
+                ),
+              )
+            : Text(
+                noteTitle,
+                style: myTextStyle(
+                  size: 18,
+                  color: PRIMARY_COLOR,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.undo, color: PRIMARY_COLOR),
-            onPressed: _undoChanges,
-          ),
+          if (isEditMode)
+            IconButton(
+              icon: Icon(Icons.format_bold, color: PRIMARY_COLOR),
+              onPressed: _toggleBold,
+            ),
           IconButton(
             icon: Icon(Icons.copy, color: PRIMARY_COLOR),
             onPressed: () {
@@ -177,7 +229,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   color: Color.fromARGB(255, 60, 60, 60),
                 ),
                 decoration: InputDecoration(
