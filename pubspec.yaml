@@ -39,7 +39,7 @@ dependencies:
   firebase_messaging: ^15.1.2
   flutter_local_notifications: ^18.0.1
   flutter_background_service: ^5.0.10
-  flutter_background_service_android: ^6.2.7
+  flutter_background_service_android: ^6.2.8
   permission_handler: ^11.3.1
   flutter_background_service_ios: ^5.0.3
   shared_preferences: ^2.1.0
@@ -64,13 +64,14 @@ dependencies:
   hive_flutter: ^1.1.0
   flutter_bloc: ^9.0.0
   flutter_colorpicker: ^1.1.0
+  video_player: ^2.8.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   hive_generator: ^2.0.1
   build_runner: ^2.4.13
-  freezed: ^2.5.7
+  freezed: ^2.5.2
   json_serializable: ^6.8.0
 
 flutter_icons:

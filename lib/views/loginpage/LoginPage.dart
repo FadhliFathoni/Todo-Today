@@ -22,8 +22,8 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       // await initializeService();
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
-        // return MainPage(user: prefs.getString('user')!);
         return MainPage(user: prefs.getString('user')!);
+        // return NotesPage(user: prefs.getString('user')!);
       }));
     }
   }

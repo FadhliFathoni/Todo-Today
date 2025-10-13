@@ -357,16 +357,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                         alignment: Alignment.center,
                         child: CircularButton(
                           color: PRIMARY_COLOR,
-                          icon: Icons.note_add_outlined,
+                          // icon: Icons.note_add_outlined,
+                          icon: Icons.add,
                           onTap: () {
-                            // dialogTambah(context, setState);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    NotesPage(user: widget.user),
-                              ),
-                            );
+                            dialogTambah(context, setState);
+                            // Navigator.push(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (context) =>
+                            //         NotesPage(user: widget.user),
+                            //   ),
+                            // );
                           },
                         ),
                       ),
@@ -604,7 +605,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                       child: Text(
                         "Create",
                         style: TextStyle(
-                            fontFamily: PRIMARY_FONT, color: Colors.white),
+                          fontFamily: PRIMARY_FONT,
+                          color: Colors.white,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: PRIMARY_COLOR),

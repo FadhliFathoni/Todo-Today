@@ -42,3 +42,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Java heap dumps and crash logs
+*.hprof
+hs_err_pid*.log
+replay_pid*.log

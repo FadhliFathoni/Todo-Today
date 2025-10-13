@@ -47,6 +47,7 @@ class _MainwishlistState extends State<Mainwishlist>
           color: PRIMARY_COLOR,
         ),
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 5,
         title: Text(
           "Wish List Kita",
@@ -95,6 +96,7 @@ class _WishListState extends State<WishList> {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   bool isButtonEnabled = false;
+  TextEditingController ceritaController = TextEditingController();
 
   @override
   void dispose() {
@@ -109,7 +111,6 @@ class _WishListState extends State<WishList> {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference wishlist = firestore.collection("wishlist");
     PlatformFile? pickedFile;
-    String fileName = "File Name";
 
     UploadTask? uploadTask;
     return Scaffold(
@@ -342,8 +343,6 @@ class _WishListState extends State<WishList> {
                           trailing: IconButton(
                             icon: Icon(Icons.check, color: PRIMARY_COLOR),
                             onPressed: () {
-                              TextEditingController ceritaController =
-                                  TextEditingController();
                               showDialog(
                                 barrierDismissible: false,
                                 context: context,
@@ -365,7 +364,6 @@ class _WishListState extends State<WishList> {
                                           if (file.name != "null") {
                                             setState(() {
                                               pickedFile = file;
-                                              fileName = pickedFile!.name;
                                             });
                                           }
                                         } else {
@@ -410,89 +408,100 @@ class _WishListState extends State<WishList> {
                                             fontFamily: PRIMARY_FONT,
                                           ),
                                         ),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            GestureDetector(
-                                              onTap: selectFile,
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.grey
-                                                          .withOpacity(0.3),
-                                                      offset: Offset(0, 4),
-                                                      blurRadius: 8,
-                                                    ),
-                                                  ],
-                                                  color: Colors.white,
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                width: 160,
-                                                height: 160,
-                                                margin: EdgeInsets.all(10),
-                                                child: Center(
-                                                  child: (pickedFile == null)
-                                                      ? Icon(
-                                                          Icons
-                                                              .camera_alt_outlined,
-                                                          color: PRIMARY_COLOR,
-                                                          size: 40)
-                                                      : ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(16),
-                                                          child: Image.file(
-                                                            File(pickedFile!
-                                                                .path!),
-                                                            fit: BoxFit.cover,
-                                                            width:
-                                                                double.infinity,
-                                                            height:
-                                                                double.infinity,
+                                        content: SingleChildScrollView(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              GestureDetector(
+                                                onTap: selectFile,
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.grey
+                                                            .withOpacity(0.3),
+                                                        offset: Offset(0, 4),
+                                                        blurRadius: 8,
+                                                      ),
+                                                    ],
+                                                    color: Colors.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            16),
+                                                  ),
+                                                  width: 160,
+                                                  height: 160,
+                                                  margin: EdgeInsets.only(
+                                                      top: 10,
+                                                      bottom: 0,
+                                                      left: 10,
+                                                      right: 10),
+                                                  child: Center(
+                                                    child: (pickedFile == null)
+                                                        ? Icon(
+                                                            Icons
+                                                                .camera_alt_outlined,
+                                                            color:
+                                                                PRIMARY_COLOR,
+                                                            size: 40)
+                                                        : ClipRRect(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        16),
+                                                            child: Image.file(
+                                                              File(pickedFile!
+                                                                  .path!),
+                                                              fit: BoxFit.cover,
+                                                              width: double
+                                                                  .infinity,
+                                                              height: double
+                                                                  .infinity,
+                                                            ),
                                                           ),
-                                                        ),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            PrimaryTextField(
-                                              controller: ceritaController,
-                                              hintText:
-                                                  "Ada cerita apa hari ini",
-                                              maxLine: null,
-                                              onChanged: (value) {},
-                                            ),
-                                            ElevatedButton(
-                                              onPressed: () async {
-                                                uploadFile();
-                                                if (pickedFile?.name
-                                                            .toString() !=
-                                                        "null" &&
-                                                    ceritaController
-                                                        .text.isNotEmpty) {
-                                                  reference.update({
-                                                    "status": "syudah",
-                                                    "time": Timestamp.now(),
-                                                    "picture": pickedFile!.name,
-                                                    "cerita":
-                                                        ceritaController.text,
-                                                  });
-                                                }
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                "Syudah",
-                                                style: TextStyle(
-                                                  fontFamily: PRIMARY_FONT,
-                                                  color: Colors.white,
+                                              PrimaryTextField(
+                                                controller: ceritaController,
+                                                hintText:
+                                                    "Ada cerita apa hari ini",
+                                                maxLine: null,
+                                                onChanged: (value) {},
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () async {
+                                                  uploadFile();
+                                                  if (pickedFile?.name
+                                                              .toString() !=
+                                                          "null" &&
+                                                      ceritaController
+                                                          .text.isNotEmpty) {
+                                                    reference.update({
+                                                      "status": "syudah",
+                                                      "time": Timestamp.now(),
+                                                      "picture":
+                                                          pickedFile!.name,
+                                                      "cerita":
+                                                          ceritaController.text,
+                                                    });
+                                                  }
+                                                  Navigator.pop(context);
+                                                },
+                                                child: Text(
+                                                  "Syudah",
+                                                  style: TextStyle(
+                                                    fontFamily: PRIMARY_FONT,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      PRIMARY_COLOR,
                                                 ),
                                               ),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: PRIMARY_COLOR,
-                                              ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       );
                                     },
@@ -541,8 +550,6 @@ class WishListDone extends StatefulWidget {
 }
 
 class _WishListDoneState extends State<WishListDone> {
-  Map<String, dynamic>? dataWishList;
-
   @override
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -586,16 +593,12 @@ class _WishListDoneState extends State<WishListDone> {
           itemCount: docs.length,
           itemBuilder: (context, index) {
             var data = docs[index].data() as Map<String, dynamic>;
-            var reference = docs[index].reference;
             var title = data["title"] ?? 'No Title';
             var description = data["description"] ?? 'No Description';
             var time = data["time"] as Timestamp?;
             var timeString = convertTimestampToIndonesianDate(time);
             return GestureDetector(
               onTap: () {
-                setState(() {
-                  dataWishList = data;
-                });
                 showModalBottomSheet(
                   context: context,
                   backgroundColor: Colors.transparent,
@@ -627,7 +630,7 @@ class _WishListDoneState extends State<WishListDone> {
                                   [
                                     GestureDetector(
                                       onTap: () {
-                                        getImage(dataWishList!['picture'])
+                                        getImage(data['picture'])
                                             .then((imageUrl) {
                                           Navigator.push(
                                             context,
@@ -652,7 +655,7 @@ class _WishListDoneState extends State<WishListDone> {
                                           child: Hero(
                                             tag: "buktinyata",
                                             child: FirebasePicture(
-                                              image: dataWishList!["picture"],
+                                              image: data["picture"],
                                               boxFit: BoxFit.cover,
                                             ),
                                           ),
@@ -663,7 +666,7 @@ class _WishListDoneState extends State<WishListDone> {
                                     Padding(
                                       padding: const EdgeInsets.all(16.0),
                                       child: Text(
-                                        dataWishList!["cerita"] ?? "",
+                                        data["cerita"] ?? "",
                                         style:
                                             TextStyle(fontFamily: PRIMARY_FONT),
                                         textAlign: TextAlign.justify,
@@ -745,10 +748,13 @@ class FullScreenImage extends StatelessWidget {
         centerTitle: true,
       ),
       body: Center(
-        child: PhotoView(
-          imageProvider: NetworkImage(imageUrl),
-          backgroundDecoration: BoxDecoration(
-            color: Colors.white,
+        child: Hero(
+          tag: "buktinyata",
+          child: PhotoView(
+            imageProvider: NetworkImage(imageUrl),
+            backgroundDecoration: BoxDecoration(
+              color: Colors.white,
+            ),
           ),
         ),
       ),
