@@ -5,6 +5,7 @@ import 'package:todo_today/Component/FormattedDateTime.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/views/Money/ListWalletPage.dart';
+import 'package:todo_today/views/Money/ListCategoryPage.dart';
 import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 
 class Financialpage extends StatefulWidget {
@@ -233,13 +234,13 @@ class _FinancialpageState extends State<Financialpage> {
                               return Container();
                             }
                             var items = [
-                              DropdownMenuItem<String>(
-                                value: "tambah_kategori",
-                                child: Text(
-                                  "Tambah Kategori",
-                                  style: myTextStyle(color: PRIMARY_COLOR),
-                                ),
-                              ),
+                              // DropdownMenuItem<String>(
+                              //   value: "tambah_kategori",
+                              //   child: Text(
+                              //     "Tambah Kategori",
+                              //     style: myTextStyle(color: PRIMARY_COLOR),
+                              //   ),
+                              // ),
                               ...snapshot.data!.docs
                                   .map<DropdownMenuItem<String>>((doc) {
                                 return DropdownMenuItem<String>(
@@ -251,65 +252,88 @@ class _FinancialpageState extends State<Financialpage> {
                                 );
                               }).toList()
                             ];
-                            return DropdownButton<String>(
-                              dropdownColor: Colors.white,
-                              style: myTextStyle(),
-                              iconEnabledColor: PRIMARY_COLOR,
-                              items: items,
-                              value: selectedKategori,
-                              onChanged: (value) {
-                                dialogSetState(() {
-                                  selectedKategori = value;
-                                });
-                                if (selectedKategori == "tambah_kategori") {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      backgroundColor: Colors.white,
-                                      title: Center(
-                                        child: Text(
-                                          "Nambahin Kategori",
-                                          style: myTextStyle(
-                                            color: PRIMARY_COLOR,
-                                            size: 18,
-                                          ),
-                                        ),
-                                      ),
-                                      content: PrimaryTextField(
-                                        controller: kategoriController,
-                                        hintText: "Kategori apah",
-                                        onChanged: (data) {},
-                                      ),
-                                      actions: [
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.white,
-                                          ),
-                                          onPressed: () {
-                                            kategori.add({
-                                              "name":
-                                                  kategoriController.value.text,
-                                              "time": DateTime.now(),
-                                            });
-                                            dialogSetState(() {});
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text(
-                                            "Syudah",
-                                            style: myTextStyle(
-                                              color: PRIMARY_COLOR,
+                            return Row(
+                              children: [
+                                DropdownButton<String>(
+                                  dropdownColor: Colors.white,
+                                  style: myTextStyle(),
+                                  iconEnabledColor: PRIMARY_COLOR,
+                                  items: items,
+                                  value: selectedKategori,
+                                  onChanged: (value) {
+                                    dialogSetState(() {
+                                      selectedKategori = value;
+                                    });
+                                    if (selectedKategori == "tambah_kategori") {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          backgroundColor: Colors.white,
+                                          title: Center(
+                                            child: Text(
+                                              "Nambahin Kategori",
+                                              style: myTextStyle(
+                                                color: PRIMARY_COLOR,
+                                                size: 18,
+                                              ),
                                             ),
                                           ),
-                                        )
-                                      ],
-                                    ),
-                                  );
-                                }
-                              },
-                              hint: Text(
-                                "Pilih Kategori",
-                                style: myTextStyle(),
-                              ),
+                                          content: PrimaryTextField(
+                                            controller: kategoriController,
+                                            hintText: "Kategori apah",
+                                            onChanged: (data) {},
+                                          ),
+                                          actions: [
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.white,
+                                              ),
+                                              onPressed: () {
+                                                kategori.add({
+                                                  "name": kategoriController
+                                                      .value.text,
+                                                  "time": DateTime.now(),
+                                                });
+                                                dialogSetState(() {});
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                "Syudah",
+                                                style: myTextStyle(
+                                                  color: PRIMARY_COLOR,
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  hint: Text(
+                                    "Pilih Kategori",
+                                    style: myTextStyle(),
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.edit,
+                                    color: PRIMARY_COLOR,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ListCategoryPage(
+                                          kategori: kategori,
+                                          user: widget.user,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  tooltip: "Kelola Kategori",
+                                ),
+                              ],
                             );
                           },
                         ),

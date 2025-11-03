@@ -94,7 +94,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                 builder: (context, snapshot) {
                   if (snapshot is TodoLoading) {
                     return Center(
-                        child: CircularProgressIndicator(color: PRIMARY_COLOR));
+                        child: MyCircularProgressIndicator());
                   } else if (snapshot is TodoLoaded) {
                     List<TodoModel> listData = [];
                     int firstIndex = 0;

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' hide Border;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -50,13 +50,13 @@ class FinancialTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dataMap = data.data() as Map<String, dynamic>?;
-    final isIncome = dataMap?["type"] == "Pemasukan";
-    final colorIndicator = isIncome ? Colors.green : Colors.red;
-    final title = dataMap?["title"] ?? dataMap?["type"];
+    if (dataMap == null) return Container();
+    final isIncome = dataMap["type"] == "Pemasukan";
+    final title = dataMap["title"] ?? dataMap["type"];
     final totalAmount = formatToRupiah(
-      dataMap?["total"] * (isIncome ? 1 : -1),
+      dataMap["total"] * (isIncome ? 1 : -1),
     );
-    final category = dataMap!.containsKey("kategori")
+    final category = dataMap.containsKey("kategori")
         ? dataMap["kategori"]
         : dataMap["wallet"];
     final date = convertTimestampToIndonesianDate(dataMap["time"])!;
@@ -133,84 +133,479 @@ class FinancialTile1 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dataMap = data.data() as Map<String, dynamic>?;
-    final isIncome = dataMap?["type"].toString().toLowerCase() == "pemasukan";
-    final colorIndicator = isIncome ? Colors.green : Colors.red;
-    final title = dataMap?["title"] ?? dataMap?["type"];
+    if (dataMap == null) return Container();
+
+    final isIncome = dataMap["type"].toString().toLowerCase() == "pemasukan";
+    final title = dataMap["title"] ?? dataMap["type"];
     final totalAmount = formatToRupiah(
-      dataMap?["total"] * (isIncome ? 1 : -1),
+      dataMap["total"] * (isIncome ? 1 : -1),
     );
-    final category = dataMap!.containsKey("kategori")
-        ? dataMap["kategori"]
-        : dataMap["wallet"];
-    final date = convertTimestampToIndonesianDate(dataMap["time"])!;
 
     return GestureDetector(
       onLongPress: () {
+        // Get kategori collection reference
+        // Extract user ID from record reference path
+        // record path is: finance/{user}/record
+        var userDoc = record.parent?.parent;
+        var userId = userDoc?.id ?? "";
+        var instance = FirebaseFirestore.instance;
+        var collection = instance.collection("finance").doc(userId);
+        var kategori = collection.collection("kategori");
+
+        // Initialize controllers with existing data
         var titleController = TextEditingController(text: dataMap["title"]);
+        var totalController = TextEditingController(
+          text: formatToRupiah(dataMap["total"]),
+        );
+        var kategoriController = TextEditingController();
+
+        // Get current values
+        DateTime selectedDateTime = (dataMap["time"] as Timestamp).toDate();
+        String? selectedKategori = dataMap["kategori"];
+        String? selectedWallet = dataMap["wallet"];
+        String recordType = dataMap["type"];
+
+        // Date/Time picker function
+        Future<void> selectDateTime(BuildContext context,
+            StateSetter dialogSetState, DateTime dateInput) async {
+          final DateTime? pickedDate = await showDatePicker(
+            context: context,
+            initialDate: dateInput,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2101),
+            builder: (context, child) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: ColorScheme.light(
+                    primary: PRIMARY_COLOR,
+                    onPrimary: Colors.white,
+                    onSurface: Colors.black,
+                  ),
+                ),
+                child: child!,
+              );
+            },
+          );
+
+          if (pickedDate != null) {
+            final TimeOfDay? pickedTime = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay.fromDateTime(dateInput),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(
+                      primary: PRIMARY_COLOR,
+                      onPrimary: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+                    dialogBackgroundColor: Colors.white,
+                    textButtonTheme: TextButtonThemeData(
+                      style: TextButton.styleFrom(
+                        foregroundColor: PRIMARY_COLOR,
+                      ),
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+
+            if (pickedTime != null) {
+              dialogSetState(() {
+                selectedDateTime = DateTime(
+                  pickedDate.year,
+                  pickedDate.month,
+                  pickedDate.day,
+                  pickedTime.hour,
+                  pickedTime.minute,
+                );
+              });
+            }
+          }
+        }
+
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: Colors.white,
-            title: Center(
-              child: Text(
-                (!isIncome) ? "Edit Record" : "Hapus Record",
-                style: myTextStyle(size: 18, color: PRIMARY_COLOR),
+          builder: (context) => StatefulBuilder(
+            builder: (context, dialogSetState) => AlertDialog(
+              backgroundColor: Colors.white,
+              title: Center(
+                child: Text(
+                  "Edit Record",
+                  style: myTextStyle(size: 18, color: PRIMARY_COLOR),
+                ),
               ),
-            ),
-            content: PrimaryTextField(
-                controller: titleController,
-                hintText: (!isIncome) ? dataMap["title"] : "",
-                onChanged: (data) {}),
-            actions: [
-              StreamBuilder(
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PrimaryTextField(
+                      controller: titleController,
+                      hintText: "Title",
+                      onChanged: (data) {},
+                    ),
+                    const SizedBox(height: 12),
+                    PrimaryTextField(
+                      controller: totalController,
+                      hintText: "Berapa?",
+                      textInputType: TextInputType.number,
+                      onChanged: (var data) {
+                        int amount = int.tryParse(
+                                data.replaceAll(RegExp(r'[^0-9]'), '')) ??
+                            0;
+                        totalController.value = TextEditingValue(
+                          text: formatToRupiah(amount),
+                          selection: TextSelection.fromPosition(
+                            TextPosition(
+                              offset: formatToRupiah(amount).length,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (recordType == "Pengeluaran")
+                      StreamBuilder(
+                        stream: kategori.snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return Container();
+                          }
+
+                          // Filter out duplicate category names - keep only unique ones
+                          Set<String> seenCategories = {};
+                          List<DropdownMenuItem<String>> categoryItems = [];
+
+                          // Add categories from Firestore, filtering duplicates
+                          for (var doc in snapshot.data!.docs) {
+                            String? categoryName =
+                                doc['name']?.toString().trim();
+                            if (categoryName != null &&
+                                categoryName.isNotEmpty &&
+                                !seenCategories.contains(categoryName)) {
+                              seenCategories.add(categoryName);
+                              categoryItems.add(
+                                DropdownMenuItem<String>(
+                                  value: categoryName,
+                                  child: Text(
+                                    categoryName,
+                                    style: myTextStyle(),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+
+                          // Ensure the current selected category is included, even if it doesn't exist in Firestore
+                          String? trimmedSelectedKategori =
+                              selectedKategori?.trim();
+                          if (trimmedSelectedKategori != null &&
+                              trimmedSelectedKategori.isNotEmpty &&
+                              !seenCategories
+                                  .contains(trimmedSelectedKategori)) {
+                            // Add the existing category to the list if it's not already there
+                            categoryItems.add(
+                              DropdownMenuItem<String>(
+                                value: trimmedSelectedKategori,
+                                child: Text(
+                                  trimmedSelectedKategori,
+                                  style: myTextStyle(),
+                                ),
+                              ),
+                            );
+                          }
+
+                          // Build dropdown items
+                          List<DropdownMenuItem<String>> items = [
+                            // DropdownMenuItem<String>(
+                            //   value: "tambah_kategori",
+                            //   child: Text(
+                            //     "Tambah Kategori",
+                            //     style: myTextStyle(color: PRIMARY_COLOR),
+                            //   ),
+                            // ),
+                            ...categoryItems,
+                          ];
+
+                          // Ensure validSelectedKategori exists in items
+                          Set<String> itemValues = items
+                              .map((item) => item.value)
+                              .whereType<String>()
+                              .toSet();
+
+                          String? finalValidSelectedKategori =
+                              trimmedSelectedKategori;
+                          if (finalValidSelectedKategori != null &&
+                              !itemValues
+                                  .contains(finalValidSelectedKategori)) {
+                            finalValidSelectedKategori = null;
+                          }
+
+                          return DropdownButton<String>(
+                            dropdownColor: Colors.white,
+                            style: myTextStyle(),
+                            iconEnabledColor: PRIMARY_COLOR,
+                            items: items,
+                            value: finalValidSelectedKategori,
+                            onChanged: (value) {
+                              dialogSetState(() {
+                                selectedKategori = value;
+                              });
+                              if (selectedKategori == "tambah_kategori") {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    backgroundColor: Colors.white,
+                                    title: Center(
+                                      child: Text(
+                                        "Nambahin Kategori",
+                                        style: myTextStyle(
+                                          color: PRIMARY_COLOR,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ),
+                                    content: PrimaryTextField(
+                                      controller: kategoriController,
+                                      hintText: "Kategori apah",
+                                      onChanged: (data) {},
+                                    ),
+                                    actions: [
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                        ),
+                                        onPressed: () {
+                                          kategori.add({
+                                            "name":
+                                                kategoriController.value.text,
+                                            "time": DateTime.now(),
+                                          });
+                                          dialogSetState(() {});
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Syudah",
+                                          style: myTextStyle(
+                                            color: PRIMARY_COLOR,
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                );
+                              }
+                            },
+                            hint: Text(
+                              "Pilih Kategori",
+                              style: myTextStyle(),
+                            ),
+                          );
+                        },
+                      ),
+                    if (recordType == "Pengeluaran") const SizedBox(height: 12),
+                    StreamBuilder(
+                      stream: wallet.snapshots(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return Container();
+                        }
+
+                        var walletItems = snapshot.data!.docs
+                            .map<DropdownMenuItem<String>>((doc) {
+                          return DropdownMenuItem<String>(
+                            value: doc.id,
+                            child: Text(
+                              doc['name'],
+                              style: myTextStyle(),
+                            ),
+                          );
+                        }).toList();
+                        return DropdownButton<String>(
+                          dropdownColor: Colors.white,
+                          iconEnabledColor: PRIMARY_COLOR,
+                          style: myTextStyle(),
+                          items: walletItems,
+                          value: selectedWallet,
+                          onChanged: (value) {
+                            dialogSetState(() {
+                              selectedWallet = value;
+                            });
+                          },
+                          hint: Text(
+                            "Pilih Wallet",
+                            style: myTextStyle(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () async {
+                        await selectDateTime(
+                            context, dialogSetState, selectedDateTime);
+                      },
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: PRIMARY_COLOR),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              formatDateWithTime(selectedDateTime),
+                              style: myTextStyle(),
+                            ),
+                            Icon(Icons.calendar_today, color: PRIMARY_COLOR),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                StreamBuilder(
                   stream: wallet.snapshots(),
                   builder: (context, snapshot) {
                     return ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white),
-                        onPressed: () {
-                          record.doc(data.id).delete().then(
-                            (_) {
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        record.doc(data.id).delete().then(
+                          (_) {
+                            updateAmount(
+                              selectedWallet:
+                                  dataMap["wallet"].toString().toLowerCase(),
+                              selectedType:
+                                  dataMap["type"].toString().toLowerCase(),
+                              totalAmount: dataMap["total"],
+                              snapshot: snapshot,
+                              wallet: wallet,
+                              isDelete: true,
+                            );
+                          },
+                        );
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        "Hapus",
+                        style: myTextStyle(color: PRIMARY_COLOR),
+                      ),
+                    );
+                  },
+                ),
+                StreamBuilder(
+                  stream: wallet.snapshots(),
+                  builder: (context, walletSnapshot) {
+                    return ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: PRIMARY_COLOR),
+                      onPressed: () async {
+                        if (!walletSnapshot.hasData) return;
+
+                        int newTotalAmount =
+                            convertRupiahToInt(totalController.value.text);
+                        String oldWallet =
+                            dataMap["wallet"].toString().toLowerCase();
+                        String newWallet = selectedWallet!.toLowerCase();
+                        String type = recordType.toString().toLowerCase();
+                        int oldTotalAmount = dataMap["total"];
+
+                        // Calculate the difference in amount
+                        int amountDifference = newTotalAmount - oldTotalAmount;
+
+                        // If wallet changed, we need to undo old wallet and apply to new wallet
+                        bool walletChanged = oldWallet != newWallet;
+
+                        if (walletChanged) {
+                          // First, undo the old wallet's calculation
+                          updateAmount(
+                            selectedWallet: oldWallet,
+                            selectedType: type,
+                            totalAmount: oldTotalAmount,
+                            snapshot: walletSnapshot,
+                            wallet: wallet,
+                            isDelete: true,
+                          );
+
+                          // Wait a bit to ensure wallet update is processed
+                          await Future.delayed(Duration(milliseconds: 100));
+
+                          // Get fresh snapshot after wallet update
+                          var freshSnapshot = await wallet.get();
+                          var freshWalletSnapshot = AsyncSnapshot<
+                              QuerySnapshot<Map<String, dynamic>>>.withData(
+                            ConnectionState.done,
+                            freshSnapshot,
+                          );
+
+                          // Then, apply the new wallet's calculation
+                          if (newTotalAmount != 0) {
+                            updateAmount(
+                              selectedWallet: newWallet,
+                              selectedType: type,
+                              totalAmount: newTotalAmount,
+                              snapshot: freshWalletSnapshot,
+                              wallet: wallet,
+                            );
+                          }
+                        } else {
+                          // Same wallet - just apply the difference
+                          if (amountDifference != 0) {
+                            // Apply the difference amount
+                            if (amountDifference > 0) {
+                              // Increasing amount - add the difference
                               updateAmount(
-                                selectedWallet:
-                                    dataMap["wallet"].toString().toLowerCase(),
-                                selectedType:
-                                    dataMap["type"].toString().toLowerCase(),
-                                totalAmount: dataMap["total"],
-                                snapshot: snapshot,
+                                selectedWallet: newWallet,
+                                selectedType: type,
+                                totalAmount: amountDifference.abs(),
+                                snapshot: walletSnapshot,
+                                wallet: wallet,
+                              );
+                            } else {
+                              // Decreasing amount - subtract the difference
+                              updateAmount(
+                                selectedWallet: newWallet,
+                                selectedType: type,
+                                totalAmount: amountDifference.abs(),
+                                snapshot: walletSnapshot,
                                 wallet: wallet,
                                 isDelete: true,
                               );
-                            },
-                          );
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          "Hapus",
-                          style: myTextStyle(color: PRIMARY_COLOR),
-                        ));
-                  }),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: PRIMARY_COLOR),
-                onPressed: () {
-                  record.doc(data.id).set({
-                    "title": titleController.value.text,
-                    "wallet": dataMap["wallet"],
-                    "type": dataMap["type"],
-                    "total": dataMap["total"],
-                    "time": dataMap["time"],
-                    if (dataMap["type"] != "Pemasukan")
-                      "kategori": dataMap["kategori"]
-                  });
+                            }
+                          }
+                        }
 
-                  Navigator.pop(context);
-                },
-                child: Text(
-                  "Syudah",
-                  style: myTextStyle(color: Colors.white),
+                        // Update the record
+                        await record.doc(data.id).set({
+                          "title": titleController.value.text,
+                          "wallet": selectedWallet,
+                          "type": recordType,
+                          "total": newTotalAmount,
+                          "time": Timestamp.fromDate(selectedDateTime),
+                          if (recordType == "Pengeluaran" &&
+                              selectedKategori != null)
+                            "kategori": selectedKategori
+                        });
+
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        "Syudah",
+                        style: myTextStyle(color: Colors.white),
+                      ),
+                    );
+                  },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -463,7 +858,7 @@ Future<void> generateExcel({
       TextCellValue(data["wallet"]),
       TextCellValue(data["title"] ?? ""),
       TextCellValue(data["kategori"] ?? ""),
-      TextCellValue(formatToRupiah(data["total"])),
+      TextCellValue(data["total"].toString()),
       TextCellValue(formatDateWithTime((data["time"] as Timestamp).toDate())),
     ]);
   }

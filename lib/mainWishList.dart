@@ -6,11 +6,13 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:todo_today/Component/FirebasePicture.dart';
+import 'package:video_player/video_player.dart';
+import 'package:todo_today/Component/FirebaseMedia.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Mainwishlist extends StatefulWidget {
   const Mainwishlist({super.key});
@@ -97,6 +99,7 @@ class _WishListState extends State<WishList> {
   TextEditingController descriptionController = TextEditingController();
   bool isButtonEnabled = false;
   TextEditingController ceritaController = TextEditingController();
+  TextEditingController linkController = TextEditingController();
 
   @override
   void dispose() {
@@ -233,80 +236,160 @@ class _WishListState extends State<WishList> {
                   if (status == "belum") {
                     return GestureDetector(
                       onTap: () {
+                        var linkController = TextEditingController(
+                          text: data['link'] ?? '',
+                        );
+                        DateTime selectedDate =
+                            (data['time'] as Timestamp?)?.toDate() ??
+                                DateTime.now();
+
                         showDialog(
                           context: context,
                           builder: (context) {
-                            return AlertDialog(
-                              backgroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              content: Container(
-                                padding: EdgeInsets.all(16),
-                                width: MediaQuery.of(context).size.width * 0.7,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Center(
-                                      child: Heading1(
-                                        color: PRIMARY_COLOR,
-                                        text: "Update",
+                            return StatefulBuilder(
+                              builder: (BuildContext context,
+                                  StateSetter dialogSetState) {
+                                return AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  content: SingleChildScrollView(
+                                    child: Container(
+                                      padding: EdgeInsets.all(16),
+                                      width: MediaQuery.of(context).size.width *
+                                          0.7,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Center(
+                                            child: Heading1(
+                                              color: PRIMARY_COLOR,
+                                              text: "Edit Wishlist",
+                                            ),
+                                          ),
+                                          SizedBox(height: 10),
+                                          PrimaryTextField(
+                                            controller: titleController,
+                                            hintText: "Title",
+                                            maxLength: 30,
+                                            onChanged: (value) {},
+                                          ),
+                                          SizedBox(height: 10),
+                                          PrimaryTextField(
+                                            controller: descriptionController,
+                                            maxLength: 50,
+                                            hintText: "Description",
+                                            onChanged: (value) {},
+                                          ),
+                                          SizedBox(height: 10),
+                                          GestureDetector(
+                                            onTap: () async {
+                                              final DateTime? picked =
+                                                  await showDatePicker(
+                                                context: context,
+                                                initialDate: selectedDate,
+                                                firstDate: DateTime(2000),
+                                                lastDate: DateTime(2100),
+                                                builder: (context, child) {
+                                                  return Theme(
+                                                    data: Theme.of(context)
+                                                        .copyWith(
+                                                      colorScheme:
+                                                          ColorScheme.light(
+                                                        primary: PRIMARY_COLOR,
+                                                        onPrimary: Colors.white,
+                                                        onSurface: Colors.black,
+                                                      ),
+                                                    ),
+                                                    child: child!,
+                                                  );
+                                                },
+                                              );
+                                              if (picked != null) {
+                                                dialogSetState(() {
+                                                  selectedDate = picked;
+                                                });
+                                              }
+                                            },
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 12, horizontal: 12),
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: PRIMARY_COLOR),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    DateFormat('dd MMMM yyyy')
+                                                        .format(selectedDate),
+                                                    style: TextStyle(
+                                                      fontFamily: PRIMARY_FONT,
+                                                      color: PRIMARY_COLOR,
+                                                    ),
+                                                  ),
+                                                  Icon(Icons.calendar_today,
+                                                      color: PRIMARY_COLOR),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(height: 10),
+                                          PrimaryTextField(
+                                            controller: linkController,
+                                            hintText:
+                                                "Link dokumentasi - Opsional",
+                                            maxLine: null,
+                                            onChanged: (value) {},
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    SizedBox(height: 10),
-                                    PrimaryTextField(
-                                      controller: titleController,
-                                      hintText: "Title",
-                                      maxLength: 30,
-                                      onChanged: (value) {},
-                                    ),
-                                    PrimaryTextField(
-                                      controller: descriptionController,
-                                      maxLength: 50,
-                                      hintText: "Description",
-                                      onChanged: (value) {},
+                                  ),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        Map<String, dynamic> updateData = {
+                                          "title": titleController.text,
+                                          "description":
+                                              descriptionController.text,
+                                          "time":
+                                              Timestamp.fromDate(selectedDate),
+                                        };
+                                        if (linkController.text
+                                            .trim()
+                                            .isNotEmpty) {
+                                          updateData["link"] =
+                                              linkController.text.trim();
+                                        } else {
+                                          updateData["link"] =
+                                              FieldValue.delete();
+                                        }
+                                        await reference.update(updateData);
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(
+                                        "Udehh",
+                                        style: TextStyle(
+                                          fontFamily: PRIMARY_FONT,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: PRIMARY_COLOR,
+                                      ),
                                     ),
                                   ],
-                                ),
-                              ),
-                              actions: [
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    await reference.delete();
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(
-                                    "Apus",
-                                    style: TextStyle(
-                                      fontFamily: PRIMARY_FONT,
-                                      color: PRIMARY_COLOR,
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                  ),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    await reference.update({
-                                      "title": titleController.text,
-                                      "description": descriptionController.text,
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(
-                                    "Udehh",
-                                    style: TextStyle(
-                                      fontFamily: PRIMARY_FONT,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: PRIMARY_COLOR,
-                                  ),
-                                ),
-                              ],
+                                );
+                              },
                             );
                           },
                         );
@@ -351,8 +434,27 @@ class _WishListState extends State<WishList> {
                                     builder: (BuildContext context,
                                         StateSetter setState) {
                                       Future<void> selectFile() async {
-                                        final result = await FilePicker.platform
-                                            .pickFiles();
+                                        final result =
+                                            await FilePicker.platform.pickFiles(
+                                          type: FileType.custom,
+                                          allowedExtensions: [
+                                            // Image formats
+                                            'jpg',
+                                            'jpeg',
+                                            'png',
+                                            'gif',
+                                            'webp',
+                                            'bmp',
+                                            // Video formats
+                                            'mp4',
+                                            'mov',
+                                            'avi',
+                                            'mkv',
+                                            'webm',
+                                            '3gp',
+                                            'm4v',
+                                          ],
+                                        );
 
                                         // Check if result is not null and contains files
                                         if (result != null &&
@@ -372,7 +474,8 @@ class _WishListState extends State<WishList> {
                                         }
                                       }
 
-                                      Future uploadFile() async {
+                                      Future uploadFile(BuildContext context,
+                                          StateSetter dialogSetState) async {
                                         if (pickedFile != null) {
                                           final path =
                                               'wishlist/${pickedFile!.name}';
@@ -383,13 +486,142 @@ class _WishListState extends State<WishList> {
                                               .child(path);
                                           uploadTask = ref.putFile(file);
 
-                                          final snapshot = await uploadTask!
-                                              .whenComplete(() {});
-                                          final urlDownload = await snapshot.ref
-                                              .getDownloadURL();
-                                          print("Download link ${urlDownload}");
+                                          // Show progress dialog
+                                          showDialog(
+                                            context: context,
+                                            barrierDismissible: false,
+                                            builder:
+                                                (BuildContext progressContext) {
+                                              return StreamBuilder<
+                                                  TaskSnapshot>(
+                                                stream:
+                                                    uploadTask!.snapshotEvents,
+                                                builder: (BuildContext context,
+                                                    AsyncSnapshot<TaskSnapshot>
+                                                        snapshot) {
+                                                  Widget? widget;
+
+                                                  if (snapshot.hasData) {
+                                                    final taskSnapshot =
+                                                        snapshot.data!;
+                                                    final progress = taskSnapshot
+                                                            .bytesTransferred /
+                                                        taskSnapshot.totalBytes;
+                                                    final percentage =
+                                                        (progress * 100)
+                                                            .toStringAsFixed(0);
+
+                                                    widget = AlertDialog(
+                                                      backgroundColor:
+                                                          Colors.white,
+                                                      content: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          CircularProgressIndicator(
+                                                            value: progress,
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .grey[300],
+                                                            valueColor:
+                                                                AlwaysStoppedAnimation<
+                                                                        Color>(
+                                                                    PRIMARY_COLOR),
+                                                          ),
+                                                          SizedBox(height: 20),
+                                                          Text(
+                                                            'Bentar y: $percentage%',
+                                                            style: TextStyle(
+                                                              fontFamily:
+                                                                  PRIMARY_FONT,
+                                                              color:
+                                                                  PRIMARY_COLOR,
+                                                              fontSize: 16,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  } else {
+                                                    widget = AlertDialog(
+                                                      backgroundColor:
+                                                          Colors.white,
+                                                      content: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          MyCircularProgressIndicator(),
+                                                          SizedBox(height: 20),
+                                                          Text(
+                                                            'Preparing upload...',
+                                                            style: TextStyle(
+                                                              fontFamily:
+                                                                  PRIMARY_FONT,
+                                                              color:
+                                                                  PRIMARY_COLOR,
+                                                              fontSize: 16,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  }
+
+                                                  return widget;
+                                                },
+                                              );
+                                            },
+                                          );
+
+                                          try {
+                                            final snapshot = await uploadTask!
+                                                .whenComplete(() {});
+                                            final urlDownload = await snapshot
+                                                .ref
+                                                .getDownloadURL();
+                                            print(
+                                                "Download link ${urlDownload}");
+                                            Navigator.of(context).pop();
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Yeayyy uploadnya berhasil!',
+                                                  style: TextStyle(
+                                                    fontFamily: PRIMARY_FONT,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                backgroundColor: Colors.green,
+                                                duration: Duration(seconds: 2),
+                                              ),
+                                            );
+
+                                            return true;
+                                          } catch (e) {
+                                            // Close progress dialog
+                                            Navigator.of(context).pop();
+
+                                            // Show error message
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Upload failed: ${e.toString()}',
+                                                  style: TextStyle(
+                                                    fontFamily: PRIMARY_FONT,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                backgroundColor: Colors.red,
+                                                duration: Duration(seconds: 3),
+                                              ),
+                                            );
+
+                                            return false;
+                                          }
                                         } else {
-                                          return;
+                                          return false;
                                         }
                                       }
 
@@ -444,21 +676,8 @@ class _WishListState extends State<WishList> {
                                                             color:
                                                                 PRIMARY_COLOR,
                                                             size: 40)
-                                                        : ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        16),
-                                                            child: Image.file(
-                                                              File(pickedFile!
-                                                                  .path!),
-                                                              fit: BoxFit.cover,
-                                                              width: double
-                                                                  .infinity,
-                                                              height: double
-                                                                  .infinity,
-                                                            ),
-                                                          ),
+                                                        : _buildFilePreview(
+                                                            pickedFile!),
                                                   ),
                                                 ),
                                               ),
@@ -469,24 +688,54 @@ class _WishListState extends State<WishList> {
                                                 maxLine: null,
                                                 onChanged: (value) {},
                                               ),
+                                              SizedBox(height: 12),
+                                              PrimaryTextField(
+                                                controller: linkController,
+                                                hintText:
+                                                    "Ingpo link dokumentasi - Opsional",
+                                                maxLine: null,
+                                                onChanged: (value) {},
+                                              ),
+                                              SizedBox(height: 12),
                                               ElevatedButton(
                                                 onPressed: () async {
-                                                  uploadFile();
                                                   if (pickedFile?.name
                                                               .toString() !=
                                                           "null" &&
                                                       ceritaController
                                                           .text.isNotEmpty) {
-                                                    reference.update({
-                                                      "status": "syudah",
-                                                      "time": Timestamp.now(),
-                                                      "picture":
-                                                          pickedFile!.name,
-                                                      "cerita":
-                                                          ceritaController.text,
-                                                    });
+                                                    // Upload file and wait for completion
+                                                    final uploadSuccess =
+                                                        await uploadFile(
+                                                            context, setState);
+
+                                                    if (uploadSuccess) {
+                                                      // Update Firestore only after successful upload
+                                                      Map<String, dynamic>
+                                                          updateData = {
+                                                        "status": "syudah",
+                                                        "time": Timestamp.now(),
+                                                        "picture":
+                                                            pickedFile!.name,
+                                                        "cerita":
+                                                            ceritaController
+                                                                .text,
+                                                      };
+                                                      // Add link if provided
+                                                      if (linkController.text
+                                                          .trim()
+                                                          .isNotEmpty) {
+                                                        updateData["link"] =
+                                                            linkController.text
+                                                                .trim();
+                                                      }
+                                                      await reference
+                                                          .update(updateData);
+                                                      Navigator.pop(context);
+                                                    }
+                                                  } else {
+                                                    Navigator.pop(context);
                                                   }
-                                                  Navigator.pop(context);
                                                 },
                                                 child: Text(
                                                   "Syudah",
@@ -630,18 +879,37 @@ class _WishListDoneState extends State<WishListDone> {
                                   [
                                     GestureDetector(
                                       onTap: () {
-                                        getImage(data['picture'])
-                                            .then((imageUrl) {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  FullScreenImage(
-                                                imageUrl: imageUrl,
+                                        // Open FullScreenImage if it's a photo (image or gif)
+                                        if (_isPhotoFormat(data['picture'])) {
+                                          getImage(data['picture'])
+                                              .then((imageUrl) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    FullScreenImage(
+                                                  imageUrl: imageUrl,
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                        });
+                                            );
+                                          });
+                                        }
+                                        // Open FullScreenVideo if it's a video
+                                        else if (_isVideoFormat(
+                                            data['picture'])) {
+                                          getImage(data['picture'])
+                                              .then((videoUrl) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    FullScreenVideo(
+                                                  videoUrl: videoUrl,
+                                                ),
+                                              ),
+                                            );
+                                          });
+                                        }
                                       },
                                       child: Container(
                                         width:
@@ -654,9 +922,11 @@ class _WishListDoneState extends State<WishListDone> {
                                               BorderRadius.circular(16),
                                           child: Hero(
                                             tag: "buktinyata",
-                                            child: FirebasePicture(
-                                              image: data["picture"],
+                                            child: FirebaseMedia(
+                                              mediaUrl: data["picture"],
                                               boxFit: BoxFit.cover,
+                                              autoPlay: false,
+                                              showControls: true,
                                             ),
                                           ),
                                         ),
@@ -672,12 +942,238 @@ class _WishListDoneState extends State<WishListDone> {
                                         textAlign: TextAlign.justify,
                                       ),
                                     ),
+                                    if (data["link"] != null &&
+                                        data["link"]
+                                            .toString()
+                                            .trim()
+                                            .isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16.0, vertical: 8.0),
+                                        child: ElevatedButton.icon(
+                                          onPressed: () async {
+                                            try {
+                                              final url = data["link"]
+                                                  .toString()
+                                                  .trim();
+                                              final uri = Uri.parse(url);
+                                              if (await canLaunchUrl(uri)) {
+                                                await launchUrl(uri,
+                                                    mode: LaunchMode
+                                                        .externalApplication);
+                                              } else {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Tidak dapat membuka link: $url',
+                                                        style: TextStyle(
+                                                            fontFamily:
+                                                                PRIMARY_FONT),
+                                                      ),
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Error: ${e.toString()}',
+                                                      style: TextStyle(
+                                                          fontFamily:
+                                                              PRIMARY_FONT),
+                                                    ),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                          icon: Icon(
+                                            Icons.link,
+                                            color: Colors.white,
+                                          ),
+                                          label: Text(
+                                            "Dokumentasi hari ini",
+                                            style: TextStyle(
+                                              fontFamily: PRIMARY_FONT,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: PRIMARY_COLOR,
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 20, vertical: 12),
+                                          ),
+                                        ),
+                                      ),
                                     SizedBox(height: 20),
                                   ],
                                 ),
                               ),
                             ],
                           ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+              onLongPress: () {
+                var reference = docs[index].reference;
+                var titleController = TextEditingController(
+                  text: data["title"] ?? '',
+                );
+                var descriptionController = TextEditingController(
+                  text: data["description"] ?? '',
+                );
+                var linkController = TextEditingController(
+                  text: data["link"] ?? '',
+                );
+                DateTime selectedDate =
+                    (data["time"] as Timestamp?)?.toDate() ?? DateTime.now();
+
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return StatefulBuilder(
+                      builder:
+                          (BuildContext context, StateSetter dialogSetState) {
+                        return AlertDialog(
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          content: SingleChildScrollView(
+                            child: Container(
+                              padding: EdgeInsets.all(16),
+                              width: MediaQuery.of(context).size.width * 0.7,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Center(
+                                    child: Heading1(
+                                      color: PRIMARY_COLOR,
+                                      text: "Edit Wishlist",
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                  PrimaryTextField(
+                                    controller: titleController,
+                                    hintText: "Title",
+                                    maxLength: 30,
+                                    onChanged: (value) {},
+                                  ),
+                                  SizedBox(height: 10),
+                                  PrimaryTextField(
+                                    controller: descriptionController,
+                                    maxLength: 50,
+                                    hintText: "Description",
+                                    onChanged: (value) {},
+                                  ),
+                                  SizedBox(height: 10),
+                                  GestureDetector(
+                                    onTap: () async {
+                                      final DateTime? picked =
+                                          await showDatePicker(
+                                        context: context,
+                                        initialDate: selectedDate,
+                                        firstDate: DateTime(2000),
+                                        lastDate: DateTime(2100),
+                                        builder: (context, child) {
+                                          return Theme(
+                                            data: Theme.of(context).copyWith(
+                                              colorScheme: ColorScheme.light(
+                                                primary: PRIMARY_COLOR,
+                                                onPrimary: Colors.white,
+                                                onSurface: Colors.black,
+                                              ),
+                                            ),
+                                            child: child!,
+                                          );
+                                        },
+                                      );
+                                      if (picked != null) {
+                                        dialogSetState(() {
+                                          selectedDate = picked;
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        border:
+                                            Border.all(color: PRIMARY_COLOR),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            DateFormat('dd MMMM yyyy')
+                                                .format(selectedDate),
+                                            style: TextStyle(
+                                              fontFamily: PRIMARY_FONT,
+                                              color: PRIMARY_COLOR,
+                                            ),
+                                          ),
+                                          Icon(Icons.calendar_today,
+                                              color: PRIMARY_COLOR),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                  PrimaryTextField(
+                                    controller: linkController,
+                                    hintText: "Link dokumentasi - Opsional",
+                                    maxLine: null,
+                                    onChanged: (value) {},
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          actions: [
+                            ElevatedButton(
+                              onPressed: () async {
+                                Map<String, dynamic> updateData = {
+                                  "title": titleController.text,
+                                  "description": descriptionController.text,
+                                  "time": Timestamp.fromDate(selectedDate),
+                                };
+                                if (linkController.text.trim().isNotEmpty) {
+                                  updateData["link"] =
+                                      linkController.text.trim();
+                                } else {
+                                  updateData["link"] = FieldValue.delete();
+                                }
+                                await reference.update(updateData);
+                                Navigator.pop(context);
+                                Navigator.pop(
+                                    context); // Close bottom sheet too
+                              },
+                              child: Text(
+                                "Udehh",
+                                style: TextStyle(
+                                  fontFamily: PRIMARY_FONT,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: PRIMARY_COLOR,
+                              ),
+                            ),
+                          ],
                         );
                       },
                     );
@@ -752,6 +1248,7 @@ class FullScreenImage extends StatelessWidget {
           tag: "buktinyata",
           child: PhotoView(
             imageProvider: NetworkImage(imageUrl),
+            loadingBuilder: (context, event) => MyCircularProgressIndicator(),
             backgroundDecoration: BoxDecoration(
               color: Colors.white,
             ),
@@ -759,6 +1256,240 @@ class FullScreenImage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class FullScreenVideo extends StatefulWidget {
+  final String videoUrl;
+  const FullScreenVideo({required this.videoUrl, super.key});
+
+  @override
+  State<FullScreenVideo> createState() => _FullScreenVideoState();
+}
+
+class _FullScreenVideoState extends State<FullScreenVideo> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  bool _isPlaying = false;
+  bool _showControls = true;
+  bool _isBuffering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideo();
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeVideo() async {
+    try {
+      _controller =
+          VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      await _controller!.initialize();
+      _controller!.addListener(() {
+        if (mounted) {
+          setState(() {
+            _isPlaying = _controller!.value.isPlaying;
+            _isBuffering = _controller!.value.isBuffering;
+          });
+        }
+      });
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    } catch (e) {
+      print('Error initializing video: $e');
+      if (mounted) {
+        setState(() {
+          _isInitialized = false;
+        });
+      }
+    }
+  }
+
+  void _togglePlayPause() {
+    if (_controller!.value.isPlaying) {
+      _controller!.pause();
+    } else {
+      _controller!.play();
+    }
+    setState(() {
+      _isPlaying = _controller!.value.isPlaying;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        leading: BackButton(
+          color: PRIMARY_COLOR,
+        ),
+        title: Text(
+          "Bukti Nyata",
+          style: TextStyle(fontFamily: PRIMARY_FONT, color: PRIMARY_COLOR),
+        ),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: _isInitialized && _controller != null
+            ? GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showControls = !_showControls;
+                  });
+                },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: _controller!.value.aspectRatio,
+                      child: VideoPlayer(_controller!),
+                    ),
+                    if (_showControls)
+                      Container(
+                        color: Colors.white.withOpacity(0.9),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_isBuffering)
+                              Padding(
+                                padding: EdgeInsets.only(bottom: 10),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                PRIMARY_COLOR),
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      'Buffering...',
+                                      style: TextStyle(
+                                        color: PRIMARY_COLOR,
+                                        fontSize: 12,
+                                        fontFamily: PRIMARY_FONT,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            IconButton(
+                              icon: Icon(
+                                _isPlaying ? Icons.pause : Icons.play_arrow,
+                                color: PRIMARY_COLOR,
+                                size: 64,
+                              ),
+                              onPressed: _togglePlayPause,
+                            ),
+                            SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.8,
+                                  child: VideoProgressIndicator(
+                                    _controller!,
+                                    allowScrubbing: true,
+                                    colors: VideoProgressColors(
+                                      playedColor: PRIMARY_COLOR,
+                                      bufferedColor: Colors.grey,
+                                      backgroundColor: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              '${_formatDuration(_controller!.value.position)} / ${_formatDuration(_controller!.value.duration)}',
+                              style: TextStyle(
+                                color: PRIMARY_COLOR,
+                                fontSize: 14,
+                                fontFamily: PRIMARY_FONT,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_isBuffering && !_showControls)
+                      Center(
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      PRIMARY_COLOR),
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Buffering...',
+                                style: TextStyle(
+                                  color: PRIMARY_COLOR,
+                                  fontSize: 12,
+                                  fontFamily: PRIMARY_FONT,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              )
+            : Container(
+                color: Colors.white,
+                child: Center(
+                  child: MyCircularProgressIndicator(),
+                ),
+              ),
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = duration.inHours;
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    if (hours > 0) {
+      return '${twoDigits(hours)}:$minutes:$seconds';
+    }
+    return '$minutes:$seconds';
   }
 }
 
@@ -777,6 +1508,121 @@ Future<String> getImage(String image) async {
     return url;
   } catch (e) {
     return image;
+  }
+}
+
+bool _isPhotoFormat(String url) {
+  final extension = url.toLowerCase().split('.').last;
+
+  // List of video formats
+  const videoFormats = ['mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'];
+
+  // Return true if it's NOT a video format (i.e., it's a photo)
+  return !videoFormats.contains(extension);
+}
+
+bool _isVideoFormat(String fileName) {
+  final extension = fileName.toLowerCase().split('.').last;
+  const videoFormats = ['mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'];
+  return videoFormats.contains(extension);
+}
+
+Widget _buildFilePreview(PlatformFile file) {
+  if (file.path == null) {
+    return Icon(Icons.error, color: Colors.red);
+  }
+
+  final filePath = File(file.path!);
+
+  if (_isVideoFormat(file.name)) {
+    return _VideoPreviewWidget(filePath: filePath);
+  } else {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Image.file(
+        filePath,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      ),
+    );
+  }
+}
+
+class _VideoPreviewWidget extends StatefulWidget {
+  final File filePath;
+
+  const _VideoPreviewWidget({required this.filePath});
+
+  @override
+  State<_VideoPreviewWidget> createState() => _VideoPreviewWidgetState();
+}
+
+class _VideoPreviewWidgetState extends State<_VideoPreviewWidget> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideo();
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeVideo() async {
+    try {
+      _controller = VideoPlayerController.file(widget.filePath);
+      await _controller!.initialize();
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    } catch (e) {
+      print('Error initializing video preview: $e');
+      if (mounted) {
+        setState(() {
+          _isInitialized = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized || _controller == null) {
+      return Container(
+        color: Colors.grey[300],
+        child: Center(
+          child: MyCircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: AspectRatio(
+            aspectRatio: _controller!.value.aspectRatio,
+            child: VideoPlayer(_controller!),
+          ),
+        ),
+        Center(
+          child: Icon(
+            Icons.play_circle_outline,
+            color: Colors.white,
+            size: 50,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -803,7 +1649,7 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => 60; // Height of the sticky header
+  double get maxExtent => 60;
   @override
   double get minExtent => 60;
 

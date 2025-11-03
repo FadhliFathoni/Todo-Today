@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/Component/Text/MyTextStyle.dart';
 import 'package:todo_today/main.dart';
+import 'package:todo_today/mainWishList.dart';
 import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 import 'package:todo_today/views/notes/folderPage.dart';
 
@@ -58,10 +59,7 @@ class _NotesPageState extends State<NotesPage> {
         builder: (context, snapshot) {
           if (!snapshot.hasData)
             return Center(
-                child: CircularProgressIndicator(
-              color: PRIMARY_COLOR,
-            ));
-
+                child: MyCircularProgressIndicator(),);
           var list = snapshot.data!.docs;
           if (searchQuery.isNotEmpty) {
             list = list.where((doc) {

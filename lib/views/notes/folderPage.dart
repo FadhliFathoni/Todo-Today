@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:todo_today/main.dart';
+import 'package:todo_today/mainWishList.dart';
 import 'package:todo_today/views/Money/helper/helperFinancialPage.dart';
 import 'package:todo_today/views/notes/addNotePage.dart';
 import 'package:todo_today/views/notes/noteDetailPage.dart';
@@ -72,9 +73,7 @@ class _FolderPageState extends State<FolderPage> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
-              child: CircularProgressIndicator(
-                color: PRIMARY_COLOR,
-              ),
+              child: MyCircularProgressIndicator(),
             );
           }
 
