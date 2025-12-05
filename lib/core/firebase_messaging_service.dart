@@ -15,6 +15,13 @@ class FirebaseMessagingService {
 
   @pragma('vm:entry-point')
   static Future<void> initialize() async {
+    // Skip Firebase Messaging on Windows and Linux (not supported)
+    // FCM is supported on Android, iOS, Web, and macOS
+    if (Platform.isWindows || Platform.isLinux) {
+      print("Firebase Messaging is not supported on Windows/Linux platforms");
+      return;
+    }
+
     if (Platform.isAndroid) {
       final androidPlugin = _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
@@ -89,15 +96,12 @@ class FirebaseMessagingService {
         message.notification?.body ?? message.data['body'] ?? 'No Body';
 
     const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-      'channel_id',
-      'channel_name',
-      importance: Importance.high,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-      icon: "@mipmap/launcher_icon"
-    );
+        AndroidNotificationDetails('channel_id', 'channel_name',
+            importance: Importance.high,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            icon: "@mipmap/launcher_icon");
 
     const NotificationDetails details =
         NotificationDetails(android: androidDetails);

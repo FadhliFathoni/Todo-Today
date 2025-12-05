@@ -373,7 +373,9 @@ class _FinancialpageState extends State<Financialpage> {
                           );
                         },
                       ),
-                      GestureDetector(
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
                           onTap: () async {
                             selectDateTime(
                               context,
@@ -381,10 +383,16 @@ class _FinancialpageState extends State<Financialpage> {
                               dateInput: dateInput,
                             );
                           },
-                          child: Text(
-                            formatDateWithTime(selectedDateTime),
-                            style: myTextStyle(),
-                          )),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 8.0, horizontal: 4.0),
+                            child: Text(
+                              formatDateWithTime(selectedDateTime),
+                              style: myTextStyle(),
+                            ),
+                          ),
+                        ),
+                      ),
                       Align(
                         alignment: Alignment.centerRight,
                         child: StreamBuilder(

@@ -27,10 +27,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -66,7 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '427836812978',
     projectId: 'todo-today-74b74',
     storageBucket: 'todo-today-74b74.appspot.com',
-    iosClientId: '427836812978-n0tjqtkmh0e5nls863vo3enng26l8es0.apps.googleusercontent.com',
+    iosClientId:
+        '427836812978-n0tjqtkmh0e5nls863vo3enng26l8es0.apps.googleusercontent.com',
     iosBundleId: 'com.example.todoToday',
   );
 
@@ -76,7 +74,17 @@ class DefaultFirebaseOptions {
     messagingSenderId: '427836812978',
     projectId: 'todo-today-74b74',
     storageBucket: 'todo-today-74b74.appspot.com',
-    iosClientId: '427836812978-n0tjqtkmh0e5nls863vo3enng26l8es0.apps.googleusercontent.com',
+    iosClientId:
+        '427836812978-n0tjqtkmh0e5nls863vo3enng26l8es0.apps.googleusercontent.com',
     iosBundleId: 'com.example.todoToday',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyDc-jC3OgOgY5kn-rfB25veHJVm6B4IR2U',
+    appId: '1:427836812978:web:c9024ed6da3a1bcc38e3ab',
+    messagingSenderId: '427836812978',
+    projectId: 'todo-today-74b74',
+    authDomain: 'todo-today-74b74.firebaseapp.com',
+    storageBucket: 'todo-today-74b74.appspot.com',
   );
 }
