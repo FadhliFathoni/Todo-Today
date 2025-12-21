@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image/image.dart' as img;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -115,7 +118,6 @@ class _WishListState extends State<WishList> {
     CollectionReference wishlist = firestore.collection("wishlist");
     PlatformFile? pickedFile;
 
-    UploadTask? uploadTask;
     return Scaffold(
         backgroundColor: BG_COLOR,
         floatingActionButton: FloatingActionButton(
@@ -438,21 +440,13 @@ class _WishListState extends State<WishList> {
                                             await FilePicker.platform.pickFiles(
                                           type: FileType.custom,
                                           allowedExtensions: [
-                                            // Image formats
+                                            // Image formats only
                                             'jpg',
                                             'jpeg',
                                             'png',
                                             'gif',
                                             'webp',
                                             'bmp',
-                                            // Video formats
-                                            'mp4',
-                                            'mov',
-                                            'avi',
-                                            'mkv',
-                                            'webm',
-                                            '3gp',
-                                            'm4v',
                                           ],
                                         );
 
@@ -461,7 +455,6 @@ class _WishListState extends State<WishList> {
                                             result.files.isNotEmpty) {
                                           // Use safe access operators to avoid null-related issues
                                           final file = result.files.first;
-                                          print("INI RESULT ${file.name}");
 
                                           if (file.name != "null") {
                                             setState(() {
@@ -471,157 +464,6 @@ class _WishListState extends State<WishList> {
                                         } else {
                                           print(
                                               "No file selected or result is null");
-                                        }
-                                      }
-
-                                      Future uploadFile(BuildContext context,
-                                          StateSetter dialogSetState) async {
-                                        if (pickedFile != null) {
-                                          final path =
-                                              'wishlist/${pickedFile!.name}';
-                                          final file = File(pickedFile!.path!);
-
-                                          final ref = FirebaseStorage.instance
-                                              .ref()
-                                              .child(path);
-                                          uploadTask = ref.putFile(file);
-
-                                          // Show progress dialog
-                                          showDialog(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder:
-                                                (BuildContext progressContext) {
-                                              return StreamBuilder<
-                                                  TaskSnapshot>(
-                                                stream:
-                                                    uploadTask!.snapshotEvents,
-                                                builder: (BuildContext context,
-                                                    AsyncSnapshot<TaskSnapshot>
-                                                        snapshot) {
-                                                  Widget? widget;
-
-                                                  if (snapshot.hasData) {
-                                                    final taskSnapshot =
-                                                        snapshot.data!;
-                                                    final progress = taskSnapshot
-                                                            .bytesTransferred /
-                                                        taskSnapshot.totalBytes;
-                                                    final percentage =
-                                                        (progress * 100)
-                                                            .toStringAsFixed(0);
-
-                                                    widget = AlertDialog(
-                                                      backgroundColor:
-                                                          Colors.white,
-                                                      content: Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          CircularProgressIndicator(
-                                                            value: progress,
-                                                            backgroundColor:
-                                                                Colors
-                                                                    .grey[300],
-                                                            valueColor:
-                                                                AlwaysStoppedAnimation<
-                                                                        Color>(
-                                                                    PRIMARY_COLOR),
-                                                          ),
-                                                          SizedBox(height: 20),
-                                                          Text(
-                                                            'Bentar y: $percentage%',
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  PRIMARY_FONT,
-                                                              color:
-                                                                  PRIMARY_COLOR,
-                                                              fontSize: 16,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  } else {
-                                                    widget = AlertDialog(
-                                                      backgroundColor:
-                                                          Colors.white,
-                                                      content: Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          MyCircularProgressIndicator(),
-                                                          SizedBox(height: 20),
-                                                          Text(
-                                                            'Preparing upload...',
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  PRIMARY_FONT,
-                                                              color:
-                                                                  PRIMARY_COLOR,
-                                                              fontSize: 16,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  }
-
-                                                  return widget;
-                                                },
-                                              );
-                                            },
-                                          );
-
-                                          try {
-                                            final snapshot = await uploadTask!
-                                                .whenComplete(() {});
-                                            final urlDownload = await snapshot
-                                                .ref
-                                                .getDownloadURL();
-                                            print(
-                                                "Download link ${urlDownload}");
-                                            Navigator.of(context).pop();
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  'Yeayyy uploadnya berhasil!',
-                                                  style: TextStyle(
-                                                    fontFamily: PRIMARY_FONT,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                backgroundColor: Colors.green,
-                                                duration: Duration(seconds: 2),
-                                              ),
-                                            );
-
-                                            return true;
-                                          } catch (e) {
-                                            // Close progress dialog
-                                            Navigator.of(context).pop();
-
-                                            // Show error message
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  'Upload failed: ${e.toString()}',
-                                                  style: TextStyle(
-                                                    fontFamily: PRIMARY_FONT,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                backgroundColor: Colors.red,
-                                                duration: Duration(seconds: 3),
-                                              ),
-                                            );
-
-                                            return false;
-                                          }
-                                        } else {
-                                          return false;
                                         }
                                       }
 
@@ -704,19 +546,63 @@ class _WishListState extends State<WishList> {
                                                           "null" &&
                                                       ceritaController
                                                           .text.isNotEmpty) {
-                                                    // Upload file and wait for completion
-                                                    final uploadSuccess =
-                                                        await uploadFile(
-                                                            context, setState);
+                                                    String? pictureData;
 
-                                                    if (uploadSuccess) {
-                                                      // Update Firestore only after successful upload
+                                                    // Convert image to base64 with compression
+                                                    Uint8List? bytes =
+                                                        pickedFile!.bytes;
+                                                    if (bytes == null &&
+                                                        pickedFile!.path !=
+                                                            null) {
+                                                      bytes = await File(
+                                                              pickedFile!.path!)
+                                                          .readAsBytes();
+                                                    }
+
+                                                    if (bytes != null) {
+                                                      // Compress if needed
+                                                      const maxSize = 500 * 1024;
+                                                      if (bytes.length >
+                                                          100 * 1024) {
+                                                        bytes =
+                                                            await _compressImage(
+                                                                bytes, maxSize);
+                                                      }
+
+                                                      // Detect MIME type
+                                                      final ext = pickedFile!
+                                                          .name
+                                                          .toLowerCase()
+                                                          .split('.')
+                                                          .last;
+                                                      String mimeType =
+                                                          'image/jpeg';
+                                                      if (ext == 'png') {
+                                                        mimeType = 'image/png';
+                                                      } else if (ext == 'gif') {
+                                                        mimeType = 'image/gif';
+                                                      } else if (ext ==
+                                                          'webp') {
+                                                        mimeType = 'image/webp';
+                                                      }
+
+                                                      // If compressed, always JPEG
+                                                      if (bytes.length !=
+                                                          pickedFile!
+                                                              .bytes?.length) {
+                                                        mimeType = 'image/jpeg';
+                                                      }
+
+                                                      pictureData =
+                                                          'data:$mimeType;base64,${base64Encode(bytes)}';
+                                                    }
+
+                                                    if (pictureData != null) {
                                                       Map<String, dynamic>
                                                           updateData = {
                                                         "status": "syudah",
                                                         "time": Timestamp.now(),
-                                                        "picture":
-                                                            pickedFile!.name,
+                                                        "picture": pictureData,
                                                         "cerita":
                                                             ceritaController
                                                                 .text,
@@ -841,6 +727,7 @@ class _WishListDoneState extends State<WishListDone> {
         return ListView.builder(
           itemCount: docs.length,
           itemBuilder: (context, index) {
+            var docId = docs[index].id;
             var data = docs[index].data() as Map<String, dynamic>;
             var title = data["title"] ?? 'No Title';
             var description = data["description"] ?? 'No Description';
@@ -922,12 +809,38 @@ class _WishListDoneState extends State<WishListDone> {
                                               BorderRadius.circular(16),
                                           child: Hero(
                                             tag: "buktinyata",
-                                            child: FirebaseMedia(
-                                              mediaUrl: data["picture"],
-                                              boxFit: BoxFit.cover,
-                                              autoPlay: false,
-                                              showControls: true,
-                                            ),
+                                            child: data["picture"]
+                                                        ?.startsWith(
+                                                            "data:image") ==
+                                                    true
+                                                ? Image.memory(
+                                                    base64Decode(
+                                                      data["picture"]
+                                                          .split(",")
+                                                          .last,
+                                                    ),
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : Builder(
+                                                    builder: (context) {
+                                                      // Trigger conversion to base64 in background
+                                                      if (data["picture"] !=
+                                                              null &&
+                                                          _isPhotoFormat(
+                                                              data["picture"])) {
+                                                        _convertImageToBase64AndUpdate(
+                                                            docId,
+                                                            data["picture"]);
+                                                      }
+                                                      return FirebaseMedia(
+                                                        mediaUrl:
+                                                            data["picture"],
+                                                        boxFit: BoxFit.cover,
+                                                        autoPlay: false,
+                                                        showControls: true,
+                                                      );
+                                                    },
+                                                  ),
                                           ),
                                         ),
                                       ),
@@ -1247,7 +1160,9 @@ class FullScreenImage extends StatelessWidget {
         child: Hero(
           tag: "buktinyata",
           child: PhotoView(
-            imageProvider: NetworkImage(imageUrl),
+            imageProvider: imageUrl.startsWith("data:image")
+                ? MemoryImage(base64Decode(imageUrl.split(",").last))
+                : NetworkImage(imageUrl),
             loadingBuilder: (context, event) => MyCircularProgressIndicator(),
             backgroundDecoration: BoxDecoration(
               color: Colors.white,
@@ -1519,6 +1434,156 @@ bool _isPhotoFormat(String url) {
 
   // Return true if it's NOT a video format (i.e., it's a photo)
   return !videoFormats.contains(extension);
+}
+
+/// Track which documents are being converted to prevent duplicate conversions
+final Set<String> _convertingDocs = {};
+
+/// Convert Firebase image to base64 and update Firestore
+/// Compresses image if size exceeds 1MB
+Future<void> _convertImageToBase64AndUpdate(
+    String docId, String imagePath) async {
+  // Validate inputs
+  if (docId.isEmpty || imagePath.isEmpty) return;
+
+  // Skip if already base64
+  if (imagePath.startsWith("data:image")) return;
+
+  // Prevent duplicate conversions
+  if (_convertingDocs.contains(docId)) return;
+  _convertingDocs.add(docId);
+
+  try {
+    // Get download URL
+    final ref = FirebaseStorage.instance.refFromURL(imageUrl + imagePath);
+    final url = await ref.getDownloadURL();
+
+    // Download image bytes using HttpClient
+    final httpClient = HttpClient();
+    final request = await httpClient.getUrl(Uri.parse(url));
+    final response = await request.close();
+    final bytes = await _consolidateHttpResponse(response);
+
+    // Detect MIME type from extension
+    final extension = imagePath.toLowerCase().split('.').last;
+    String mimeType = 'image/jpeg';
+    if (extension == 'png') {
+      mimeType = 'image/png';
+    } else if (extension == 'gif') {
+      mimeType = 'image/gif';
+    } else if (extension == 'webp') {
+      mimeType = 'image/webp';
+    }
+
+    Uint8List finalBytes = bytes;
+
+    // Always compress to ensure it fits in Firestore (max ~1MB doc)
+    // Target 500KB to leave room for base64 overhead and other fields
+    const maxSize = 500 * 1024; // 500KB
+    if (bytes.length > maxSize || bytes.length > 100 * 1024) {
+      // Compress if > 100KB
+      finalBytes = await _compressImage(bytes, maxSize);
+      mimeType = 'image/jpeg'; // Compressed images are always JPEG
+    }
+
+    // Convert to base64
+    final base64String = 'data:$mimeType;base64,${base64Encode(finalBytes)}';
+
+    // Final size check (Firestore max document size is ~1MB)
+    if (base64String.length > 1000000) {
+      print('Image still too large after compression: ${base64String.length}');
+      _convertingDocs.remove(docId);
+      return;
+    }
+
+    // Update Firestore
+    await FirebaseFirestore.instance
+        .collection('wishlist')
+        .doc(docId)
+        .update({'picture': base64String});
+
+    print('Successfully converted image to base64 for doc: $docId');
+  } catch (e) {
+    print('Error converting image to base64: $e');
+  } finally {
+    _convertingDocs.remove(docId);
+  }
+}
+
+/// Compress image to fit within maxSize bytes
+/// Target size accounts for base64 overhead (~33% increase)
+Future<Uint8List> _compressImage(Uint8List bytes, int maxSize) async {
+  // Decode the image
+  img.Image? image = img.decodeImage(bytes);
+  if (image == null) return bytes;
+
+  // Target raw bytes size (base64 adds ~33% overhead)
+  // So for 700KB base64, we need ~525KB raw bytes
+  int targetSize = (maxSize * 0.7).toInt();
+
+  // First, resize if image is very large (max 1200px on longest side)
+  const int maxDimension = 1200;
+  if (image.width > maxDimension || image.height > maxDimension) {
+    if (image.width > image.height) {
+      image = img.copyResize(image, width: maxDimension);
+    } else {
+      image = img.copyResize(image, height: maxDimension);
+    }
+  }
+
+  int quality = 80;
+  Uint8List compressed =
+      Uint8List.fromList(img.encodeJpg(image, quality: quality));
+
+  // Progressively reduce quality until size is acceptable
+  while (compressed.length > targetSize && quality > 20) {
+    quality -= 5;
+    compressed = Uint8List.fromList(img.encodeJpg(image, quality: quality));
+  }
+
+  // If still too large, resize the image further
+  if (compressed.length > targetSize) {
+    int maxDim = 1000;
+    while (compressed.length > targetSize && maxDim >= 300) {
+      img.Image resized;
+      if (image.width > image.height) {
+        resized = img.copyResize(image, width: maxDim);
+      } else {
+        resized = img.copyResize(image, height: maxDim);
+      }
+      // Try with current quality first
+      compressed = Uint8List.fromList(img.encodeJpg(resized, quality: quality));
+
+      // If still too large, reduce quality for this size
+      int q = quality;
+      while (compressed.length > targetSize && q > 20) {
+        q -= 10;
+        compressed = Uint8List.fromList(img.encodeJpg(resized, quality: q));
+      }
+
+      maxDim -= 200;
+    }
+  }
+
+  print(
+      'Compressed image: ${compressed.length} bytes (target: $targetSize bytes)');
+  return compressed;
+}
+
+/// Consolidate HTTP response bytes
+Future<Uint8List> _consolidateHttpResponse(HttpClientResponse response) async {
+  final List<List<int>> chunks = [];
+  await for (var chunk in response) {
+    chunks.add(chunk);
+  }
+  final totalLength = chunks.fold<int>(0, (sum, chunk) => sum + chunk.length);
+  final result = Uint8List(totalLength);
+  int offset = 0;
+  for (var chunk in chunks) {
+    result.setRange(offset, offset + chunk.length, chunk);
+    offset += chunk.length;
+  }
+  return result;
 }
 
 bool _isVideoFormat(String fileName) {

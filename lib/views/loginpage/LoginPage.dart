@@ -18,7 +18,7 @@ class _LoginPageState extends State<LoginPage> {
   void checkUser() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getString('user') == null) {
-      print("ini null temanku");
+      print("User not found");
     } else {
       // await initializeService();
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {

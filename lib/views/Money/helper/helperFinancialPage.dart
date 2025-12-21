@@ -761,7 +761,6 @@ void updateAmount({
     }
   }
 
-  print("WALLET ${walletDoc != null}");
   if (walletDoc != null) {
     int currentAmount = walletDoc["amount"] ?? 0;
     int updatedAmount = 0;
@@ -771,9 +770,7 @@ void updateAmount({
         updatedAmount = selectedWallet == "kebutuhan"
             ? currentAmount - totalAmount
             : currentAmount + totalAmount;
-        print("MASUK SINI1");
       } else {
-        print("MASUK SINI2");
         if (selectedWallet == "kebutuhan") {
           int currentAmount = walletDoc["maxAmount"] ?? 0;
           updatedAmount = currentAmount - totalAmount;
@@ -783,12 +780,10 @@ void updateAmount({
       }
     } else {
       if (selectedType == "pengeluaran") {
-        print("MASUK SINI3");
         updatedAmount = selectedWallet == "kebutuhan"
             ? currentAmount + totalAmount
             : currentAmount - totalAmount;
       } else {
-        print("MASUK SINI4");
         updatedAmount = selectedWallet == "kebutuhan"
             ? (walletDoc["maxAmount"] ?? 0) + totalAmount
             : currentAmount + totalAmount;

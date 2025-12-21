@@ -485,14 +485,14 @@ class _FinancialpageState extends State<Financialpage> {
                   try {
                     for (var doc in snapshot.data!.docs) {
                       if (doc.id == tabunganDocId) {
-                        print("EXIST");
+                        print("Tabungan found");
                         tabunganDoc = doc;
                         break;
                       }
                     }
                     for (var doc in snapshot.data!.docs) {
                       if (doc.id == danaDaruratDocId) {
-                        print("EXIST");
+                        print("Dana Darurat found");
                         danaDaruratDoc = doc;
                         break;
                       }

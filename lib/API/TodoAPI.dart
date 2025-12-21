@@ -68,9 +68,9 @@ class TodoAPI {
       var response =
           await dio.post(baseUrl + "/done-todo/$id", options: headers());
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("Sukses approve todo");
+        print("Todo done successfully");
       } else {
-        print("Gagal done todo");
+        print("Failed to complete todo");
       }
     } catch (e) {
       print("Error " + e.toString());
@@ -82,9 +82,9 @@ class TodoAPI {
       var response =
           await dio.post(baseUrl + "/delete-todo/$id", options: headers());
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("Sukses delete todo");
+        print("Todo deleted successfully");
       } else {
-        print("Gagal delete todo");
+        print("Failed to delete todo");
       }
     } catch (e) {
       print("Error " + e.toString());

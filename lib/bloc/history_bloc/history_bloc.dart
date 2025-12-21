@@ -16,7 +16,6 @@ class HistoryTodoBloc extends Cubit<HistoryStates> {
   }
 
   Future<void> getTodo() async {
-    print("MASUK SINI KEU");
     try {
       var cache = GetIt.I<HiveService>().getHistoryToday();
       if (cache != null && cache.isNotEmpty) {

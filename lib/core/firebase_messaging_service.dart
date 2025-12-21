@@ -15,9 +15,7 @@ class FirebaseMessagingService {
 
   @pragma('vm:entry-point')
   static Future<void> initialize() async {
-    // Skip Firebase Messaging on Windows and Linux (not supported)
-    // FCM is supported on Android, iOS, Web, and macOS
-    if (Platform.isWindows || Platform.isLinux) {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       print("Firebase Messaging is not supported on Windows/Linux platforms");
       return;
     }
@@ -45,6 +43,7 @@ class FirebaseMessagingService {
 
     // Dapatkan FCM Token
     String? token = await _firebaseMessaging.getToken();
+    
     print("FCM Token: $token");
     try {
       String baseUrl = dotenv.get("BASE_URL");
