@@ -65,6 +65,7 @@ dependencies:
   flutter_bloc: ^9.0.0
   flutter_colorpicker: ^1.1.0
   video_player: ^2.8.2
+  image: ^4.2.0
 
 dev_dependencies:
   flutter_test:
