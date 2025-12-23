@@ -3,14 +3,13 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image/image.dart' as img;
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:video_player/video_player.dart';
-import 'package:todo_today/Component/FirebaseMedia.dart';
 import 'package:todo_today/Component/PrimaryTextField.dart';
 import 'package:todo_today/Component/Text/Heading1.dart';
 import 'package:todo_today/main.dart';
@@ -548,7 +547,7 @@ class _WishListState extends State<WishList> {
                                                           .text.isNotEmpty) {
                                                     String? pictureData;
 
-                                                    // Convert image to base64 with compression
+                                                    // Upload image to imgbb
                                                     Uint8List? bytes =
                                                         pickedFile!.bytes;
                                                     if (bytes == null &&
@@ -560,41 +559,47 @@ class _WishListState extends State<WishList> {
                                                     }
 
                                                     if (bytes != null) {
-                                                      // Compress if needed
-                                                      const maxSize = 500 * 1024;
-                                                      if (bytes.length >
-                                                          100 * 1024) {
-                                                        bytes =
-                                                            await _compressImage(
-                                                                bytes, maxSize);
-                                                      }
-
-                                                      // Detect MIME type
-                                                      final ext = pickedFile!
-                                                          .name
-                                                          .toLowerCase()
-                                                          .split('.')
-                                                          .last;
-                                                      String mimeType =
-                                                          'image/jpeg';
-                                                      if (ext == 'png') {
-                                                        mimeType = 'image/png';
-                                                      } else if (ext == 'gif') {
-                                                        mimeType = 'image/gif';
-                                                      } else if (ext ==
-                                                          'webp') {
-                                                        mimeType = 'image/webp';
-                                                      }
-
-                                                      // If compressed, always JPEG
-                                                      if (bytes.length !=
-                                                          pickedFile!
-                                                              .bytes?.length) {
-                                                        mimeType = 'image/jpeg';
-                                                      }
+                                                      // Show uploading dialog
+                                                      showDialog(
+                                                        context: context,
+                                                        barrierDismissible:
+                                                            false,
+                                                        builder: (context) =>
+                                                            AlertDialog(
+                                                          backgroundColor:
+                                                              Colors.white,
+                                                          content: Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              MyCircularProgressIndicator(),
+                                                              SizedBox(
+                                                                  height: 20),
+                                                              Text(
+                                                                'Uploading...',
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontFamily:
+                                                                      PRIMARY_FONT,
+                                                                  color:
+                                                                      PRIMARY_COLOR,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      );
 
                                                       pictureData =
-                                                          'data:$mimeType;base64,${base64Encode(bytes)}';
+                                                          await _uploadToImgbb(
+                                                        bytes,
+                                                        name: pickedFile!.name,
+                                                      );
+
+                                                      // Close uploading dialog
+                                                      Navigator.of(context)
+                                                          .pop();
                                                     }
 
                                                     if (pictureData != null) {
@@ -727,7 +732,6 @@ class _WishListDoneState extends State<WishListDone> {
         return ListView.builder(
           itemCount: docs.length,
           itemBuilder: (context, index) {
-            var docId = docs[index].id;
             var data = docs[index].data() as Map<String, dynamic>;
             var title = data["title"] ?? 'No Title';
             var description = data["description"] ?? 'No Description';
@@ -765,37 +769,51 @@ class _WishListDoneState extends State<WishListDone> {
                                 delegate: SliverChildListDelegate(
                                   [
                                     GestureDetector(
-                                      onTap: () {
-                                        // Open FullScreenImage if it's a photo (image or gif)
-                                        if (_isPhotoFormat(data['picture'])) {
-                                          getImage(data['picture'])
-                                              .then((imageUrl) {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    FullScreenImage(
-                                                  imageUrl: imageUrl,
-                                                ),
+                                      onTap: () async {
+                                        final picture = data['picture'];
+                                        if (picture == null) return;
+
+                                        // For base64 or direct URLs, use directly
+                                        if (picture.startsWith("data:image") ||
+                                            picture.startsWith("http://") ||
+                                            picture.startsWith("https://")) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  FullScreenImage(
+                                                imageUrl: picture,
                                               ),
-                                            );
-                                          });
+                                            ),
+                                          );
+                                        }
+                                        // For Firebase Storage filename
+                                        else if (_isPhotoFormat(picture)) {
+                                          final imageUrl =
+                                              await getImage(picture);
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  FullScreenImage(
+                                                imageUrl: imageUrl,
+                                              ),
+                                            ),
+                                          );
                                         }
                                         // Open FullScreenVideo if it's a video
-                                        else if (_isVideoFormat(
-                                            data['picture'])) {
-                                          getImage(data['picture'])
-                                              .then((videoUrl) {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    FullScreenVideo(
-                                                  videoUrl: videoUrl,
-                                                ),
+                                        else if (_isVideoFormat(picture)) {
+                                          final videoUrl =
+                                              await getImage(picture);
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  FullScreenVideo(
+                                                videoUrl: videoUrl,
                                               ),
-                                            );
-                                          });
+                                            ),
+                                          );
                                         }
                                       },
                                       child: Container(
@@ -809,38 +827,8 @@ class _WishListDoneState extends State<WishListDone> {
                                               BorderRadius.circular(16),
                                           child: Hero(
                                             tag: "buktinyata",
-                                            child: data["picture"]
-                                                        ?.startsWith(
-                                                            "data:image") ==
-                                                    true
-                                                ? Image.memory(
-                                                    base64Decode(
-                                                      data["picture"]
-                                                          .split(",")
-                                                          .last,
-                                                    ),
-                                                    fit: BoxFit.cover,
-                                                  )
-                                                : Builder(
-                                                    builder: (context) {
-                                                      // Trigger conversion to base64 in background
-                                                      if (data["picture"] !=
-                                                              null &&
-                                                          _isPhotoFormat(
-                                                              data["picture"])) {
-                                                        _convertImageToBase64AndUpdate(
-                                                            docId,
-                                                            data["picture"]);
-                                                      }
-                                                      return FirebaseMedia(
-                                                        mediaUrl:
-                                                            data["picture"],
-                                                        boxFit: BoxFit.cover,
-                                                        autoPlay: false,
-                                                        showControls: true,
-                                                      );
-                                                    },
-                                                  ),
+                                            child: _buildPictureWidget(
+                                                data["picture"]),
                                           ),
                                         ),
                                       ),
@@ -951,6 +939,8 @@ class _WishListDoneState extends State<WishListDone> {
                 );
                 DateTime selectedDate =
                     (data["time"] as Timestamp?)?.toDate() ?? DateTime.now();
+                PlatformFile? newPickedFile;
+                String? currentPicture = data["picture"];
 
                 showDialog(
                   context: context,
@@ -975,6 +965,71 @@ class _WishListDoneState extends State<WishListDone> {
                                     child: Heading1(
                                       color: PRIMARY_COLOR,
                                       text: "Edit Wishlist",
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                  // Photo preview and edit
+                                  if (currentPicture != null ||
+                                      newPickedFile != null)
+                                    Container(
+                                      height: 150,
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        border:
+                                            Border.all(color: PRIMARY_COLOR),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(11),
+                                        child: newPickedFile != null
+                                            ? Image.memory(
+                                                newPickedFile!.bytes!,
+                                                fit: BoxFit.cover,
+                                              )
+                                            : _buildPictureWidget(
+                                                currentPicture),
+                                      ),
+                                    ),
+                                  SizedBox(height: 10),
+                                  // Change photo button
+                                  Center(
+                                    child: OutlinedButton.icon(
+                                      onPressed: () async {
+                                        final result = await FilePicker.platform
+                                            .pickFiles(
+                                          type: FileType.custom,
+                                          allowedExtensions: [
+                                            'jpg',
+                                            'jpeg',
+                                            'png',
+                                            'gif',
+                                            'webp',
+                                            'bmp',
+                                          ],
+                                          withData: true,
+                                        );
+                                        if (result != null &&
+                                            result.files.isNotEmpty) {
+                                          dialogSetState(() {
+                                            newPickedFile = result.files.first;
+                                          });
+                                        }
+                                      },
+                                      icon: Icon(Icons.photo_camera,
+                                          color: PRIMARY_COLOR),
+                                      label: Text(
+                                        currentPicture != null ||
+                                                newPickedFile != null
+                                            ? "Ganti Foto"
+                                            : "Tambah Foto",
+                                        style: TextStyle(
+                                          fontFamily: PRIMARY_FONT,
+                                          color: PRIMARY_COLOR,
+                                        ),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(color: PRIMARY_COLOR),
+                                      ),
                                     ),
                                   ),
                                   SizedBox(height: 10),
@@ -1070,6 +1125,56 @@ class _WishListDoneState extends State<WishListDone> {
                                 } else {
                                   updateData["link"] = FieldValue.delete();
                                 }
+
+                                // Handle new photo if picked
+                                if (newPickedFile != null) {
+                                  Uint8List? bytes = newPickedFile!.bytes;
+                                  if (bytes == null &&
+                                      newPickedFile!.path != null) {
+                                    bytes = await File(newPickedFile!.path!)
+                                        .readAsBytes();
+                                  }
+                                  if (bytes != null) {
+                                    // Show uploading dialog
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (ctx) => AlertDialog(
+                                        backgroundColor: Colors.white,
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CircularProgressIndicator(
+                                              color: PRIMARY_COLOR,
+                                            ),
+                                            SizedBox(height: 20),
+                                            Text(
+                                              'Uploading...',
+                                              style: TextStyle(
+                                                fontFamily: PRIMARY_FONT,
+                                                color: PRIMARY_COLOR,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+
+                                    // Upload to imgbb
+                                    final imageUrl = await _uploadToImgbb(
+                                      bytes,
+                                      name: newPickedFile!.name,
+                                    );
+
+                                    // Close uploading dialog
+                                    Navigator.of(context).pop();
+
+                                    if (imageUrl != null) {
+                                      updateData["picture"] = imageUrl;
+                                    }
+                                  }
+                                }
+
                                 await reference.update(updateData);
                                 Navigator.pop(context);
                                 Navigator.pop(
@@ -1426,6 +1531,110 @@ Future<String> getImage(String image) async {
   }
 }
 
+/// Build picture widget - handles both base64 and Firebase Storage images
+Widget _buildPictureWidget(String? pictureUrl, {BoxFit fit = BoxFit.cover}) {
+  if (pictureUrl == null || pictureUrl.isEmpty) {
+    return Center(child: Icon(Icons.image_not_supported));
+  }
+
+  // Base64 image
+  if (pictureUrl.startsWith("data:image")) {
+    return Image.memory(
+      base64Decode(pictureUrl.split(",").last),
+      fit: fit,
+    );
+  }
+
+  // Direct URL (imgbb or other http/https URLs)
+  if (pictureUrl.startsWith("http://") || pictureUrl.startsWith("https://")) {
+    return Image.network(
+      pictureUrl,
+      fit: fit,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Center(child: MyCircularProgressIndicator());
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Center(child: Icon(Icons.error));
+      },
+    );
+  }
+
+  // Firebase Storage image (legacy - filename only)
+  return FutureBuilder<String>(
+    future: getImage(pictureUrl),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(child: MyCircularProgressIndicator());
+      }
+      if (snapshot.hasError || !snapshot.hasData) {
+        return Center(child: Icon(Icons.error));
+      }
+      return Image.network(
+        snapshot.data!,
+        fit: fit,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(child: MyCircularProgressIndicator());
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Center(child: Icon(Icons.error));
+        },
+      );
+    },
+  );
+}
+
+/// Upload image to imgbb and return the modified URL
+Future<String?> _uploadToImgbb(Uint8List bytes, {String? name}) async {
+  const String apiKey = '4677ca31663eac9be96f33edc859a071';
+  const int expiration = 0; // 0 = tidak expire
+
+  final dio = Dio();
+  final base64Image = base64Encode(bytes);
+
+  final formData = FormData.fromMap({
+    'image': base64Image,
+    if (name != null) 'name': name,
+  });
+
+  try {
+    print('Uploading image to imgbb...');
+
+    final response = await dio.post(
+      'https://api.imgbb.com/1/upload',
+      data: formData,
+      queryParameters: {
+        'expiration': expiration,
+        'key': apiKey,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = response.data;
+
+      if (data['success'] == true) {
+        // Ambil URL dan ganti host i.ibb.co -> i.ibb.co.com
+        final String originalUrl = data['data']['url'];
+        final String modifiedUrl =
+            originalUrl.replaceFirst('i.ibb.co', 'i.ibb.co.com');
+
+        print('✅ Upload sukses! URL: $modifiedUrl');
+        return modifiedUrl;
+      } else {
+        print('❌ Upload gagal: ${data['error']['message']}');
+        return null;
+      }
+    } else {
+      print('❌ Upload gagal dengan status: ${response.statusCode}');
+      return null;
+    }
+  } on DioException catch (e) {
+    print('❌ Error: ${e.message}');
+    return null;
+  }
+}
+
 bool _isPhotoFormat(String url) {
   final extension = url.toLowerCase().split('.').last;
 
@@ -1434,156 +1643,6 @@ bool _isPhotoFormat(String url) {
 
   // Return true if it's NOT a video format (i.e., it's a photo)
   return !videoFormats.contains(extension);
-}
-
-/// Track which documents are being converted to prevent duplicate conversions
-final Set<String> _convertingDocs = {};
-
-/// Convert Firebase image to base64 and update Firestore
-/// Compresses image if size exceeds 1MB
-Future<void> _convertImageToBase64AndUpdate(
-    String docId, String imagePath) async {
-  // Validate inputs
-  if (docId.isEmpty || imagePath.isEmpty) return;
-
-  // Skip if already base64
-  if (imagePath.startsWith("data:image")) return;
-
-  // Prevent duplicate conversions
-  if (_convertingDocs.contains(docId)) return;
-  _convertingDocs.add(docId);
-
-  try {
-    // Get download URL
-    final ref = FirebaseStorage.instance.refFromURL(imageUrl + imagePath);
-    final url = await ref.getDownloadURL();
-
-    // Download image bytes using HttpClient
-    final httpClient = HttpClient();
-    final request = await httpClient.getUrl(Uri.parse(url));
-    final response = await request.close();
-    final bytes = await _consolidateHttpResponse(response);
-
-    // Detect MIME type from extension
-    final extension = imagePath.toLowerCase().split('.').last;
-    String mimeType = 'image/jpeg';
-    if (extension == 'png') {
-      mimeType = 'image/png';
-    } else if (extension == 'gif') {
-      mimeType = 'image/gif';
-    } else if (extension == 'webp') {
-      mimeType = 'image/webp';
-    }
-
-    Uint8List finalBytes = bytes;
-
-    // Always compress to ensure it fits in Firestore (max ~1MB doc)
-    // Target 500KB to leave room for base64 overhead and other fields
-    const maxSize = 500 * 1024; // 500KB
-    if (bytes.length > maxSize || bytes.length > 100 * 1024) {
-      // Compress if > 100KB
-      finalBytes = await _compressImage(bytes, maxSize);
-      mimeType = 'image/jpeg'; // Compressed images are always JPEG
-    }
-
-    // Convert to base64
-    final base64String = 'data:$mimeType;base64,${base64Encode(finalBytes)}';
-
-    // Final size check (Firestore max document size is ~1MB)
-    if (base64String.length > 1000000) {
-      print('Image still too large after compression: ${base64String.length}');
-      _convertingDocs.remove(docId);
-      return;
-    }
-
-    // Update Firestore
-    await FirebaseFirestore.instance
-        .collection('wishlist')
-        .doc(docId)
-        .update({'picture': base64String});
-
-    print('Successfully converted image to base64 for doc: $docId');
-  } catch (e) {
-    print('Error converting image to base64: $e');
-  } finally {
-    _convertingDocs.remove(docId);
-  }
-}
-
-/// Compress image to fit within maxSize bytes
-/// Target size accounts for base64 overhead (~33% increase)
-Future<Uint8List> _compressImage(Uint8List bytes, int maxSize) async {
-  // Decode the image
-  img.Image? image = img.decodeImage(bytes);
-  if (image == null) return bytes;
-
-  // Target raw bytes size (base64 adds ~33% overhead)
-  // So for 700KB base64, we need ~525KB raw bytes
-  int targetSize = (maxSize * 0.7).toInt();
-
-  // First, resize if image is very large (max 1200px on longest side)
-  const int maxDimension = 1200;
-  if (image.width > maxDimension || image.height > maxDimension) {
-    if (image.width > image.height) {
-      image = img.copyResize(image, width: maxDimension);
-    } else {
-      image = img.copyResize(image, height: maxDimension);
-    }
-  }
-
-  int quality = 80;
-  Uint8List compressed =
-      Uint8List.fromList(img.encodeJpg(image, quality: quality));
-
-  // Progressively reduce quality until size is acceptable
-  while (compressed.length > targetSize && quality > 20) {
-    quality -= 5;
-    compressed = Uint8List.fromList(img.encodeJpg(image, quality: quality));
-  }
-
-  // If still too large, resize the image further
-  if (compressed.length > targetSize) {
-    int maxDim = 1000;
-    while (compressed.length > targetSize && maxDim >= 300) {
-      img.Image resized;
-      if (image.width > image.height) {
-        resized = img.copyResize(image, width: maxDim);
-      } else {
-        resized = img.copyResize(image, height: maxDim);
-      }
-      // Try with current quality first
-      compressed = Uint8List.fromList(img.encodeJpg(resized, quality: quality));
-
-      // If still too large, reduce quality for this size
-      int q = quality;
-      while (compressed.length > targetSize && q > 20) {
-        q -= 10;
-        compressed = Uint8List.fromList(img.encodeJpg(resized, quality: q));
-      }
-
-      maxDim -= 200;
-    }
-  }
-
-  print(
-      'Compressed image: ${compressed.length} bytes (target: $targetSize bytes)');
-  return compressed;
-}
-
-/// Consolidate HTTP response bytes
-Future<Uint8List> _consolidateHttpResponse(HttpClientResponse response) async {
-  final List<List<int>> chunks = [];
-  await for (var chunk in response) {
-    chunks.add(chunk);
-  }
-  final totalLength = chunks.fold<int>(0, (sum, chunk) => sum + chunk.length);
-  final result = Uint8List(totalLength);
-  int offset = 0;
-  for (var chunk in chunks) {
-    result.setRange(offset, offset + chunk.length, chunk);
-    offset += chunk.length;
-  }
-  return result;
 }
 
 bool _isVideoFormat(String fileName) {
