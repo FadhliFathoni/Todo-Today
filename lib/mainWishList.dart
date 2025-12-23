@@ -1177,8 +1177,6 @@ class _WishListDoneState extends State<WishListDone> {
 
                                 await reference.update(updateData);
                                 Navigator.pop(context);
-                                Navigator.pop(
-                                    context); // Close bottom sheet too
                               },
                               child: Text(
                                 "Udehh",
