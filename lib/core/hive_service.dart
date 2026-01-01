@@ -11,16 +11,27 @@ class HiveService {
   }
 
   Future openBoxes() async {
-    if (!Hive.isBoxOpen(_initialOpen)) {
-      await Hive.openBox<bool>(_initialOpen);
-    }
+    try {
+      if (!Hive.isBoxOpen(_initialOpen)) {
+        await Hive.openBox<bool>(_initialOpen);
+      }
 
-    if (!Hive.isBoxOpen(_keyTodoToday)) {
-      Hive.registerAdapter(TodoModelAdapter());
-      await Hive.openBox<TodoModel>(_keyTodoToday);
-    }
-    if (!Hive.isBoxOpen(_keyHistoryToday)) {
-      await Hive.openBox<TodoModel>(_keyHistoryToday);
+      if (!Hive.isBoxOpen(_keyTodoToday)) {
+        if (!Hive.isAdapterRegistered(0)) {
+          Hive.registerAdapter(TodoModelAdapter());
+        }
+        await Hive.openBox<TodoModel>(_keyTodoToday);
+      }
+      if (!Hive.isBoxOpen(_keyHistoryToday)) {
+        await Hive.openBox<TodoModel>(_keyHistoryToday);
+      }
+    } catch (e) {
+      print('Hive openBoxes error: $e');
+      // Retry after a short delay if lock error
+      if (e.toString().contains('lock failed')) {
+        await Future.delayed(Duration(milliseconds: 500));
+        await openBoxes();
+      }
     }
   }
 
