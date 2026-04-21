@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:todo_today/main.dart';
 import 'package:todo_today/views/Money/FinancialPage.dart';
 import 'package:todo_today/views/Money/SummaryPage.dart';
+import 'package:todo_today/views/Money/voice/pages/voice_input_page.dart';
 
 class MainFinancial extends StatefulWidget {
   const MainFinancial({super.key, required this.user});
@@ -43,6 +44,20 @@ class _MainFinancialState extends State<MainFinancial> {
           "Catatan Finansial",
           style: TextStyle(fontFamily: PRIMARY_FONT, color: PRIMARY_COLOR),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Catat suara',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => VoiceInputPage(user: widget.user),
+                ),
+              );
+            },
+            icon: Icon(Icons.mic, color: PRIMARY_COLOR),
+          ),
+        ],
       ),
       body: buildBody(),
       bottomNavigationBar: BottomNavigationBar(

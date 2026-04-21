@@ -66,6 +66,7 @@ dependencies:
   flutter_colorpicker: ^1.1.0
   video_player: ^2.8.2
   image: ^4.2.0
+  speech_to_text: ^7.0.0
 
 dev_dependencies:
   flutter_test:

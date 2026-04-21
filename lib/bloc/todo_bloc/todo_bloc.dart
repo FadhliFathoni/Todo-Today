@@ -11,7 +11,7 @@ class TodoTodayBloc extends Cubit<TodoState> {
   Future<void> initializeTodo() async {
     emit(TodoLoading());
     List<TodoModel> result = await TodoAPI().getTodo(isHistory: false);
-    GetIt.I<HiveService>().initTodoToday(result);
+    await GetIt.I<HiveService>().initTodoToday(result);
     if (!isClosed) emit(TodoLoaded(result));
   }
 
@@ -23,7 +23,7 @@ class TodoTodayBloc extends Cubit<TodoState> {
         return;
       }
       var result = await TodoAPI().getTodo(isHistory: false);
-      GetIt.I<HiveService>().initTodoToday(result);
+      await GetIt.I<HiveService>().initTodoToday(result);
 
       if (!isClosed) emit(TodoLoaded(result));
     } catch (e) {

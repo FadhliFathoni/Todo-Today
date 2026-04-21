@@ -5,8 +5,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/model/TodoModel.dart';
 
 class TodoAPI {
-  var dio = Dio();
-  var baseUrl = dotenv.get("BASE_URL");
+  late final Dio dio;
+
+  TodoAPI()
+      : dio = Dio(BaseOptions(
+          // Backend sering kembalikan 404 jika route salah / BASE_URL salah;
+          // tanpa ini Dio melempar DioException dan bisa merusak alur bloc.
+          validateStatus: (status) =>
+              status != null && status >= 200 && status < 500,
+        ));
+
+  String get baseUrl => dotenv.get("BASE_URL");
 
   Options headers() {
     return Options(headers: {"Accept": "application/json"});
@@ -23,14 +32,15 @@ class TodoAPI {
         url += "/get-todo?username=$username";
       }
       var response = await dio.get(url);
+      if (response.statusCode == 404 ||
+          response.data == null ||
+          response.data is! List) {
+        return [];
+      }
       var list = (response.data as List)
           .map((e) => e as Map<String, dynamic>)
           .toList();
-      return list
-          .map(
-            (e) => TodoModel.fromJson(e),
-          )
-          .toList();
+      return list.map((e) => TodoModel.fromJson(e)).toList();
     } catch (e) {
       print("Error " + e.toString());
       return [];
