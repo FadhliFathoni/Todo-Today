@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Selaras PRIMARY_COLOR Flutter (~ #A45338) -->
+    <color name="widget_voice_icon_tint">#A45338</color>
+    <color name="widget_voice_text">#A45338</color>
+    <color name="widget_voice_subtitle">#888888</color>
+</resources>

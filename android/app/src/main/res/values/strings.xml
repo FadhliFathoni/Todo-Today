@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_voice_title">Catat suara</string>
+    <string name="widget_voice_subtitle">Keuangan</string>
+    <string name="widget_voice_description">Buka catatan suara keuangan</string>
+    <string name="widget_voice_description_long">Buka halaman pencatatan keuangan dengan suara.</string>
+</resources>

@@ -67,8 +67,8 @@ void main() {
 
   group('FinanceVoiceParser', () {
     final parser = FinanceVoiceParser(
-      availableWallets: ['bca1', 'bca2', 'ovo', 'cash'],
-      availableCategories: ['jajan', 'transport', 'makanan'],
+      availableWallets: ['BCA1', 'BCA2', 'OVO', 'CASH'],
+      availableCategories: ['Jajan', 'Transport', 'Makanan', 'Belanja', 'Belanja Online', 'Tagihan', 'Hiburan', 'Kesehatan', 'Gaji', 'Bonus'],
     );
     final now = DateTime(2026, 4, 21, 10, 0);
 
@@ -78,14 +78,14 @@ void main() {
       expect(r.amount, 20000);
       expect(r.dateTime.hour, 8);
       expect(r.title.contains('indomaret'), true);
-      expect(r.wallet, 'bca1'); // default
+      expect(r.wallet, 'BCA1'); // default
     });
 
     test('contoh 2: jajan kopi 30rb dari bca1 kategori minuman', () {
       final r = parser.parse('jajan kopi 30rb dari bca1 kategori minuman', now: now);
       expect(r.type, 'expense');
       expect(r.amount, 30000);
-      expect(r.wallet, 'bca1');
+      expect(r.wallet, 'BCA1');
     });
 
     test('contoh 3: pemasukan gaji 5 juta tanggal 1', () {
@@ -97,13 +97,13 @@ void main() {
 
     test('contoh 4: tanpa wallet → default bca1', () {
       final r = parser.parse('beli bensin 50 ribu', now: now);
-      expect(r.wallet, 'bca1');
+      expect(r.wallet, 'BCA1');
       expect(r.missingFields.contains('wallet'), true);
     });
 
     test('contoh 5: tanpa kategori expense → jajan', () {
       final r = parser.parse('beli sesuatu 10 ribu', now: now);
-      expect(r.category, 'jajan');
+      expect(r.category, 'Jajan');
     });
 
     test('contoh 6: confidence rendah saat amount tidak ada', () {

@@ -14,19 +14,20 @@ class FinanceDefaults {
 /// Alias built-in untuk wallet umum di Indonesia. Project bisa menambah
 /// wallet dinamis dari Firestore lewat `WalletMatcher` (lihat constructor).
 const Map<String, List<String>> defaultWalletAliases = {
-  'bca1': ['bca', 'bca satu', 'bca 1', 'b c a satu', 'b c a 1'],
-  'bca2': ['bca dua', 'bca 2', 'b c a dua'],
-  'mandiri': ['mandiri', 'bank mandiri'],
-  'bni': ['bni', 'b n i'],
-  'bri': ['bri', 'b r i'],
-  'cash': ['cash', 'tunai', 'cash money', 'uang cash'],
-  'ovo': ['ovo'],
-  'gopay': ['gopay', 'go pay', 'go-pay'],
-  'dana': ['dana'],
-  'shopeepay': ['shopeepay', 'shopee pay'],
-  'tabungan': ['tabungan'],
-  'dana darurat': ['dana darurat', 'darurat'],
-  'kebutuhan': ['kebutuhan'],
+  'BCA1': ['bca', 'bca satu', 'bca 1', 'b c a satu', 'b c a 1'],
+  'BCA2': ['bca dua', 'bca 2', 'b c a dua'],
+  'Mandiri': ['mandiri', 'bank mandiri'],
+  'BNI': ['bni', 'b n i'],
+  'BRI': ['bri', 'b r i'],
+  'Cash': ['cash', 'tunai', 'cash money', 'uang cash'],
+  'OVO': ['ovo'],
+  'Gopay': ['gopay', 'go pay', 'go-pay'],
+  'Dana': ['dana'],
+  'Shopeepay': ['shopeepay', 'shopee pay'],
+  'Tabungan': ['tabungan'],
+  'Dana Darurat': ['dana darurat', 'darurat'],
+  'Kebutuhan': ['kebutuhan', 'kebutuhan sehari-hari'],
+  'Kendaraan': ['kendaraan', 'kendaraan umum'],
 };
 
 /// Alias built-in untuk kategori. Project bisa override / extend dari

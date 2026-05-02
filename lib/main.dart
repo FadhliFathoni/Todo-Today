@@ -10,8 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_today/bloc/history_bloc/history_bloc.dart';
 import 'package:todo_today/bloc/todo_bloc/todo_bloc.dart';
 import 'package:todo_today/core/firebase_messaging_service.dart';
+import 'package:todo_today/core/app_navigator.dart';
 import 'package:todo_today/core/get_it.dart';
 import 'package:todo_today/core/hive_service.dart';
+import 'package:todo_today/core/voice_launch_bridge.dart';
 import 'package:todo_today/views/history/History.dart';
 import 'package:todo_today/views/Todo/homepage/Home.dart';
 import 'package:todo_today/views/loginpage/LoginPage.dart';
@@ -24,7 +26,6 @@ Color PRIMARY_COLOR = Color.fromARGB(255, 164, 83, 56);
 Color BG_COLOR = Color.fromARGB(255, 193, 200, 192);
 String PRIMARY_FONT = "DeliciousHandrawn";
 FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 double height(BuildContext context) => MediaQuery.of(context).size.height;
 double width(BuildContext context) => MediaQuery.of(context).size.width;
@@ -51,6 +52,7 @@ void main() async {
   FirebaseMessagingService.initialize();
   var service = MainRepository();
   await service.init();
+  VoiceLaunchBridge.registerResumeListener();
   runApp(MyApp());
 }
 
@@ -60,7 +62,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        navigatorKey: navigatorKey,
+        navigatorKey: appNavigatorKey,
         onGenerateRoute: (settings) {
           if (settings.name == '/main') {
             final username = settings.arguments as String; // Ambil argument dari Navigator
@@ -105,6 +107,9 @@ class _MainPageState extends State<MainPage> {
         InitializationSettings(android: initializationSettingsAndroid);
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
     flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      VoiceLaunchBridge.consumeInitialLaunchIfNeeded(context, widget.user);
+    });
   }
 
   Widget? buildBody() {
