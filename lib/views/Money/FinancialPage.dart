@@ -105,7 +105,11 @@ class _FinancialpageState extends State<Financialpage> {
         backgroundColor: Colors.white,
         onPressed: () {
           DateTime dateInput = DateTime.now();
-          selectedKategori = "Jajan";
+          selectedDateTime = DateTime.now();
+          selectedType = "pengeluaran";
+          selectedKategori = null;
+          selectedWallet = null;
+          String? selectedDestinationWallet;
           var titleController = TextEditingController();
           var totalController = TextEditingController();
           var kategoriController = TextEditingController();
@@ -197,7 +201,9 @@ class _FinancialpageState extends State<Financialpage> {
                         hintText: (selectedType == "pengeluaran")
                             ? "Buat apa?"
                             : "Apah?",
-                        onChanged: (var data) {},
+                        onChanged: (var data) {
+                          dialogSetState(() {});
+                        },
                       ),
                       PrimaryTextField(
                         controller: totalController,
@@ -207,14 +213,19 @@ class _FinancialpageState extends State<Financialpage> {
                           int amount = int.tryParse(
                                   data.replaceAll(RegExp(r'[^0-9]'), '')) ??
                               0;
-                          totalController.value = TextEditingValue(
-                            text: formatToRupiah(amount),
-                            selection: TextSelection.fromPosition(
-                              TextPosition(
-                                offset: formatToRupiah(amount).length,
+                          final formattedAmount = amount == 0 && data.isEmpty
+                              ? ""
+                              : formatToRupiah(amount);
+                          dialogSetState(() {
+                            totalController.value = TextEditingValue(
+                              text: formattedAmount,
+                              selection: TextSelection.fromPosition(
+                                TextPosition(
+                                  offset: formattedAmount.length,
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          });
                         },
                       ),
                       // Visibility(
@@ -233,25 +244,25 @@ class _FinancialpageState extends State<Financialpage> {
                             if (!snapshot.hasData) {
                               return Container();
                             }
-                            var items = [
-                              // DropdownMenuItem<String>(
-                              //   value: "tambah_kategori",
-                              //   child: Text(
-                              //     "Tambah Kategori",
-                              //     style: myTextStyle(color: PRIMARY_COLOR),
-                              //   ),
-                              // ),
-                              ...snapshot.data!.docs
-                                  .map<DropdownMenuItem<String>>((doc) {
-                                return DropdownMenuItem<String>(
-                                  value: doc['name'],
-                                  child: Text(
-                                    doc['name'],
-                                    style: myTextStyle(),
-                                  ),
-                                );
-                              }).toList()
-                            ];
+                            final categories = snapshot.data!.docs
+                                .map((doc) => doc['name'].toString())
+                                .toList();
+
+                            if (!categories.any((category) =>
+                                category.toLowerCase() == "transfer")) {
+                              categories.add("Transfer");
+                            }
+
+                            var items = categories
+                                .map<DropdownMenuItem<String>>((category) {
+                              return DropdownMenuItem<String>(
+                                value: category,
+                                child: Text(
+                                  category,
+                                  style: myTextStyle(),
+                                ),
+                              );
+                            }).toList();
                             return Row(
                               children: [
                                 DropdownButton<String>(
@@ -263,6 +274,9 @@ class _FinancialpageState extends State<Financialpage> {
                                   onChanged: (value) {
                                     dialogSetState(() {
                                       selectedKategori = value;
+                                      if (value?.toLowerCase() != "transfer") {
+                                        selectedDestinationWallet = null;
+                                      }
                                     });
                                     if (selectedKategori == "tambah_kategori") {
                                       showDialog(
@@ -338,11 +352,68 @@ class _FinancialpageState extends State<Financialpage> {
                           },
                         ),
                       ),
+                      Visibility(
+                        visible: isTransferRecord(
+                          type: selectedType,
+                          category: selectedKategori,
+                        ),
+                        child: StreamBuilder(
+                          stream: wallet.snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return Container();
+                            }
+
+                            var destinationWalletItems = snapshot.data!.docs
+                                .where((doc) => doc.id != selectedWallet)
+                                .map<DropdownMenuItem<String>>((doc) {
+                              return DropdownMenuItem<String>(
+                                value: doc.id,
+                                child: Text(
+                                  doc['name'],
+                                  style: myTextStyle(),
+                                ),
+                              );
+                            }).toList();
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Wallet tujuan",
+                                  style: myTextStyle(),
+                                ),
+                                DropdownButton<String>(
+                                  dropdownColor: Colors.white,
+                                  iconEnabledColor: PRIMARY_COLOR,
+                                  style: myTextStyle(),
+                                  items: destinationWalletItems,
+                                  value: selectedDestinationWallet,
+                                  onChanged: (value) {
+                                    dialogSetState(() {
+                                      selectedDestinationWallet = value;
+                                    });
+                                  },
+                                  hint: Text(
+                                    "Pilih Wallet Tujuan",
+                                    style: myTextStyle(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
                       StreamBuilder(
                         stream: wallet.snapshots(),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) {
                             return Container();
+                          }
+
+                          if (selectedDestinationWallet == selectedWallet) {
+                            selectedDestinationWallet = null;
                           }
 
                           var walletItems = snapshot.data!.docs
@@ -364,10 +435,18 @@ class _FinancialpageState extends State<Financialpage> {
                             onChanged: (value) {
                               dialogSetState(() {
                                 selectedWallet = value;
+                                if (selectedDestinationWallet == value) {
+                                  selectedDestinationWallet = null;
+                                }
                               });
                             },
                             hint: Text(
-                              "Pilih Wallet",
+                              isTransferRecord(
+                                type: selectedType,
+                                category: selectedKategori,
+                              )
+                                  ? "Pilih Wallet Asal"
+                                  : "Pilih Wallet",
                               style: myTextStyle(),
                             ),
                           );
@@ -401,59 +480,105 @@ class _FinancialpageState extends State<Financialpage> {
                               if (!snapshot.hasData) {
                                 return Container();
                               }
+                              final isSubmitEnabled =
+                                  isFinancialRecordFormValid(
+                                selectedType: selectedType,
+                                selectedKategori: selectedKategori,
+                                selectedWallet: selectedWallet,
+                                selectedDestinationWallet:
+                                    selectedDestinationWallet,
+                                totalText: totalController.value.text,
+                              );
                               return ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: PRIMARY_COLOR,
+                                  backgroundColor: isSubmitEnabled
+                                      ? Colors.white
+                                      : Colors.grey.shade300,
+                                  foregroundColor: isSubmitEnabled
+                                      ? PRIMARY_COLOR
+                                      : Colors.grey.shade600,
                                 ),
-                                onPressed: () {
-                                  int totalAmount = 0;
-                                  if (selectedType == "pengeluaran" &&
-                                      titleController.value.text.isNotEmpty &&
-                                      selectedKategori != null &&
-                                      totalController.value.text.isNotEmpty &&
-                                      selectedWallet != null) {
-                                    totalAmount = convertRupiahToInt(
-                                        totalController.value.text);
-                                    record.add({
-                                      "title": titleController.value.text,
-                                      "kategori": selectedKategori,
-                                      "time": selectedDateTime,
-                                      "total": totalAmount,
-                                      "type": "Pengeluaran",
-                                      "wallet": selectedWallet,
-                                      // "link": (selectedKategori ==
-                                      //         "Belanja Online")
-                                      //     ? linkController.value.text
-                                      //     : "",
-                                    });
-                                  } else if (selectedType == "pemasukan" &&
-                                      totalController.value.text.isNotEmpty) {
-                                    totalAmount = convertRupiahToInt(
-                                        totalController.value.text);
-                                    record.add({
-                                      "title": titleController.value.text,
-                                      "time": selectedDateTime,
-                                      "total": totalAmount,
-                                      "type": "Pemasukan",
-                                      "wallet": selectedWallet,
-                                    });
-                                  }
-                                  if (totalAmount != 0) {
-                                    updateAmount(
-                                      selectedWallet:
-                                          selectedWallet!.toLowerCase(),
-                                      selectedType: selectedType.toLowerCase(),
-                                      totalAmount: totalAmount,
-                                      snapshot: snapshot,
-                                      wallet: wallet,
-                                    );
-                                  }
-                                  Navigator.pop(context);
-                                },
+                                onPressed: isSubmitEnabled
+                                    ? () {
+                                        int totalAmount = 0;
+                                        final isTransfer = isTransferRecord(
+                                          type: selectedType,
+                                          category: selectedKategori,
+                                        );
+                                        final trimmedTitle =
+                                            titleController.value.text.trim();
+                                        if (selectedType == "pengeluaran" &&
+                                            selectedKategori != null &&
+                                            selectedWallet != null) {
+                                          totalAmount = convertRupiahToInt(
+                                              totalController.value.text);
+                                          record.add({
+                                            "title": trimmedTitle.isEmpty &&
+                                                    isTransfer
+                                                ? "Transfer"
+                                                : trimmedTitle,
+                                            "kategori": selectedKategori,
+                                            "time": selectedDateTime,
+                                            "total": totalAmount,
+                                            "type": "Pengeluaran",
+                                            "wallet": selectedWallet,
+                                            if (isTransfer)
+                                              "walletTujuan":
+                                                  selectedDestinationWallet,
+                                            // "link": (selectedKategori ==
+                                            //         "Belanja Online")
+                                            //     ? linkController.value.text
+                                            //     : "",
+                                          });
+                                        } else if (selectedType ==
+                                                "pemasukan" &&
+                                            selectedWallet != null) {
+                                          totalAmount = convertRupiahToInt(
+                                              totalController.value.text);
+                                          record.add({
+                                            "title": trimmedTitle,
+                                            "time": selectedDateTime,
+                                            "total": totalAmount,
+                                            "type": "Pemasukan",
+                                            "wallet": selectedWallet,
+                                          });
+                                        }
+                                        if (totalAmount != 0) {
+                                          if (isTransfer &&
+                                              selectedDestinationWallet !=
+                                                  null) {
+                                            updateTransferAmount(
+                                              sourceWallet:
+                                                  selectedWallet!.toLowerCase(),
+                                              destinationWallet:
+                                                  selectedDestinationWallet!
+                                                      .toLowerCase(),
+                                              totalAmount: totalAmount,
+                                              snapshot: snapshot,
+                                              wallet: wallet,
+                                            );
+                                          } else {
+                                            updateAmount(
+                                              selectedWallet:
+                                                  selectedWallet!.toLowerCase(),
+                                              selectedType:
+                                                  selectedType.toLowerCase(),
+                                              totalAmount: totalAmount,
+                                              snapshot: snapshot,
+                                              wallet: wallet,
+                                            );
+                                          }
+                                        }
+                                        Navigator.pop(context);
+                                      }
+                                    : null,
                                 child: Text(
                                   "Syudah",
-                                  style: myTextStyle(color: PRIMARY_COLOR),
+                                  style: myTextStyle(
+                                    color: isSubmitEnabled
+                                        ? PRIMARY_COLOR
+                                        : Colors.grey.shade600,
+                                  ),
                                 ),
                               );
                             }),

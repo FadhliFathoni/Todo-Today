@@ -42,6 +42,54 @@ String formatTimeOnly(Timestamp timestamp) {
   return DateFormat("HH:mm").format(date); // Contoh output: "17:23"
 }
 
+bool isTransferRecord({
+  required String? type,
+  required String? category,
+}) {
+  return type?.toLowerCase() == "pengeluaran" &&
+      category?.toLowerCase() == "transfer";
+}
+
+String? getTransferDestinationWallet(Map<String, dynamic> dataMap) {
+  final destination = dataMap["walletTujuan"]?.toString().trim();
+  if (destination == null || destination.isEmpty) {
+    return null;
+  }
+  return destination;
+}
+
+bool isFinancialRecordFormValid({
+  required String selectedType,
+  required String? selectedKategori,
+  required String? selectedWallet,
+  required String? selectedDestinationWallet,
+  required String totalText,
+}) {
+  final totalAmount = convertRupiahToInt(totalText);
+  if (totalAmount <= 0 || selectedWallet == null || selectedWallet.isEmpty) {
+    return false;
+  }
+
+  if (selectedType == "pengeluaran") {
+    if (selectedKategori == null || selectedKategori.trim().isEmpty) {
+      return false;
+    }
+
+    if (selectedKategori.trim().toLowerCase() == "transfer") {
+      if (selectedDestinationWallet == null ||
+          selectedDestinationWallet.isEmpty) {
+        return false;
+      }
+
+      if (selectedDestinationWallet == selectedWallet) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 class FinancialTile extends StatelessWidget {
   final DocumentSnapshot<Object?> data;
 
@@ -52,12 +100,19 @@ class FinancialTile extends StatelessWidget {
     final dataMap = data.data() as Map<String, dynamic>?;
     if (dataMap == null) return Container();
     final isIncome = dataMap["type"] == "Pemasukan";
+    final isTransfer = isTransferRecord(
+      type: dataMap["type"]?.toString(),
+      category: dataMap["kategori"]?.toString(),
+    );
+    final destinationWallet = getTransferDestinationWallet(dataMap);
     final title = dataMap["title"] ?? dataMap["type"];
     final totalAmount = formatToRupiah(
       dataMap["total"] * (isIncome ? 1 : -1),
     );
     final category = dataMap.containsKey("kategori")
-        ? dataMap["kategori"]
+        ? isTransfer && destinationWallet != null
+            ? "${dataMap["kategori"]} • ${dataMap["wallet"]} -> $destinationWallet"
+            : dataMap["kategori"]
         : dataMap["wallet"];
     final date = convertTimestampToIndonesianDate(dataMap["time"])!;
 
@@ -136,6 +191,11 @@ class FinancialTile1 extends StatelessWidget {
     if (dataMap == null) return Container();
 
     final isIncome = dataMap["type"].toString().toLowerCase() == "pemasukan";
+    final isTransfer = isTransferRecord(
+      type: dataMap["type"]?.toString(),
+      category: dataMap["kategori"]?.toString(),
+    );
+    final destinationWallet = getTransferDestinationWallet(dataMap);
     final title = dataMap["title"] ?? dataMap["type"];
     final totalAmount = formatToRupiah(
       dataMap["total"] * (isIncome ? 1 : -1),
@@ -143,29 +203,24 @@ class FinancialTile1 extends StatelessWidget {
 
     return GestureDetector(
       onLongPress: () {
-        // Get kategori collection reference
-        // Extract user ID from record reference path
-        // record path is: finance/{user}/record
         var userDoc = record.parent?.parent;
         var userId = userDoc?.id ?? "";
         var instance = FirebaseFirestore.instance;
         var collection = instance.collection("finance").doc(userId);
         var kategori = collection.collection("kategori");
 
-        // Initialize controllers with existing data
         var titleController = TextEditingController(text: dataMap["title"]);
         var totalController = TextEditingController(
           text: formatToRupiah(dataMap["total"]),
         );
         var kategoriController = TextEditingController();
 
-        // Get current values
         DateTime selectedDateTime = (dataMap["time"] as Timestamp).toDate();
         String? selectedKategori = dataMap["kategori"];
         String? selectedWallet = dataMap["wallet"];
+        String? selectedDestinationWallet = destinationWallet;
         String recordType = dataMap["type"];
 
-        // Date/Time picker function
         Future<void> selectDateTime(BuildContext context,
             StateSetter dialogSetState, DateTime dateInput) async {
           final DateTime? pickedDate = await showDatePicker(
@@ -228,384 +283,502 @@ class FinancialTile1 extends StatelessWidget {
         showDialog(
           context: context,
           builder: (context) => StatefulBuilder(
-            builder: (context, dialogSetState) => AlertDialog(
-              backgroundColor: Colors.white,
-              title: Center(
-                child: Text(
-                  "Edit Record",
-                  style: myTextStyle(size: 18, color: PRIMARY_COLOR),
+            builder: (context, dialogSetState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                title: Center(
+                  child: Text(
+                    "Edit Record",
+                    style: myTextStyle(size: 18, color: PRIMARY_COLOR),
+                  ),
                 ),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    PrimaryTextField(
-                      controller: titleController,
-                      hintText: "Title",
-                      onChanged: (data) {},
-                    ),
-                    const SizedBox(height: 12),
-                    PrimaryTextField(
-                      controller: totalController,
-                      hintText: "Berapa?",
-                      textInputType: TextInputType.number,
-                      onChanged: (var data) {
-                        int amount = int.tryParse(
-                                data.replaceAll(RegExp(r'[^0-9]'), '')) ??
-                            0;
-                        totalController.value = TextEditingValue(
-                          text: formatToRupiah(amount),
-                          selection: TextSelection.fromPosition(
-                            TextPosition(
-                              offset: formatToRupiah(amount).length,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    if (recordType == "Pengeluaran")
-                      StreamBuilder(
-                        stream: kategori.snapshots(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return Container();
-                          }
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      PrimaryTextField(
+                        controller: titleController,
+                        hintText: "Title",
+                        onChanged: (data) {
+                          dialogSetState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      PrimaryTextField(
+                        controller: totalController,
+                        hintText: "Berapa?",
+                        textInputType: TextInputType.number,
+                        onChanged: (var data) {
+                          int amount = int.tryParse(
+                                  data.replaceAll(RegExp(r'[^0-9]'), '')) ??
+                              0;
+                          final formattedAmount = amount == 0 && data.isEmpty
+                              ? ""
+                              : formatToRupiah(amount);
+                          dialogSetState(() {
+                            totalController.value = TextEditingValue(
+                              text: formattedAmount,
+                              selection: TextSelection.fromPosition(
+                                TextPosition(offset: formattedAmount.length),
+                              ),
+                            );
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      if (recordType == "Pengeluaran")
+                        StreamBuilder(
+                          stream: kategori.snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return Container();
+                            }
 
-                          // Filter out duplicate category names - keep only unique ones
-                          Set<String> seenCategories = {};
-                          List<DropdownMenuItem<String>> categoryItems = [];
+                            Set<String> seenCategories = {};
+                            List<DropdownMenuItem<String>> categoryItems = [];
 
-                          // Add categories from Firestore, filtering duplicates
-                          for (var doc in snapshot.data!.docs) {
-                            String? categoryName =
-                                doc['name']?.toString().trim();
-                            if (categoryName != null &&
-                                categoryName.isNotEmpty &&
-                                !seenCategories.contains(categoryName)) {
-                              seenCategories.add(categoryName);
+                            for (var doc in snapshot.data!.docs) {
+                              String? categoryName =
+                                  doc['name']?.toString().trim();
+                              if (categoryName != null &&
+                                  categoryName.isNotEmpty &&
+                                  !seenCategories.contains(categoryName)) {
+                                seenCategories.add(categoryName);
+                                categoryItems.add(
+                                  DropdownMenuItem<String>(
+                                    value: categoryName,
+                                    child: Text(
+                                      categoryName,
+                                      style: myTextStyle(),
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+
+                            if (!seenCategories.contains("Transfer")) {
+                              seenCategories.add("Transfer");
                               categoryItems.add(
                                 DropdownMenuItem<String>(
-                                  value: categoryName,
+                                  value: "Transfer",
                                   child: Text(
-                                    categoryName,
+                                    "Transfer",
                                     style: myTextStyle(),
                                   ),
                                 ),
                               );
                             }
-                          }
 
-                          // Ensure the current selected category is included, even if it doesn't exist in Firestore
-                          String? trimmedSelectedKategori =
-                              selectedKategori?.trim();
-                          if (trimmedSelectedKategori != null &&
-                              trimmedSelectedKategori.isNotEmpty &&
-                              !seenCategories
-                                  .contains(trimmedSelectedKategori)) {
-                            // Add the existing category to the list if it's not already there
-                            categoryItems.add(
-                              DropdownMenuItem<String>(
-                                value: trimmedSelectedKategori,
-                                child: Text(
-                                  trimmedSelectedKategori,
-                                  style: myTextStyle(),
+                            String? trimmedSelectedKategori =
+                                selectedKategori?.trim();
+                            if (trimmedSelectedKategori != null &&
+                                trimmedSelectedKategori.isNotEmpty &&
+                                !seenCategories
+                                    .contains(trimmedSelectedKategori)) {
+                              categoryItems.add(
+                                DropdownMenuItem<String>(
+                                  value: trimmedSelectedKategori,
+                                  child: Text(
+                                    trimmedSelectedKategori,
+                                    style: myTextStyle(),
+                                  ),
                                 ),
-                              ),
-                            );
-                          }
+                              );
+                            }
 
-                          // Build dropdown items
-                          List<DropdownMenuItem<String>> items = [
-                            // DropdownMenuItem<String>(
-                            //   value: "tambah_kategori",
-                            //   child: Text(
-                            //     "Tambah Kategori",
-                            //     style: myTextStyle(color: PRIMARY_COLOR),
-                            //   ),
-                            // ),
-                            ...categoryItems,
-                          ];
+                            final itemValues = categoryItems
+                                .map((item) => item.value)
+                                .whereType<String>()
+                                .toSet();
 
-                          // Ensure validSelectedKategori exists in items
-                          Set<String> itemValues = items
-                              .map((item) => item.value)
-                              .whereType<String>()
-                              .toSet();
+                            String? finalValidSelectedKategori =
+                                trimmedSelectedKategori;
+                            if (finalValidSelectedKategori != null &&
+                                !itemValues
+                                    .contains(finalValidSelectedKategori)) {
+                              finalValidSelectedKategori = null;
+                            }
 
-                          String? finalValidSelectedKategori =
-                              trimmedSelectedKategori;
-                          if (finalValidSelectedKategori != null &&
-                              !itemValues
-                                  .contains(finalValidSelectedKategori)) {
-                            finalValidSelectedKategori = null;
-                          }
-
-                          return DropdownButton<String>(
-                            dropdownColor: Colors.white,
-                            style: myTextStyle(),
-                            iconEnabledColor: PRIMARY_COLOR,
-                            items: items,
-                            value: finalValidSelectedKategori,
-                            onChanged: (value) {
-                              dialogSetState(() {
-                                selectedKategori = value;
-                              });
-                              if (selectedKategori == "tambah_kategori") {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    backgroundColor: Colors.white,
-                                    title: Center(
-                                      child: Text(
-                                        "Nambahin Kategori",
-                                        style: myTextStyle(
-                                          color: PRIMARY_COLOR,
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ),
-                                    content: PrimaryTextField(
-                                      controller: kategoriController,
-                                      hintText: "Kategori apah",
-                                      onChanged: (data) {},
-                                    ),
-                                    actions: [
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                        ),
-                                        onPressed: () {
-                                          kategori.add({
-                                            "name":
-                                                kategoriController.value.text,
-                                            "time": DateTime.now(),
-                                          });
-                                          dialogSetState(() {});
-                                          Navigator.pop(context);
-                                        },
+                            return DropdownButton<String>(
+                              dropdownColor: Colors.white,
+                              style: myTextStyle(),
+                              iconEnabledColor: PRIMARY_COLOR,
+                              items: categoryItems,
+                              value: finalValidSelectedKategori,
+                              onChanged: (value) {
+                                dialogSetState(() {
+                                  selectedKategori = value;
+                                  if (value?.toLowerCase() != "transfer") {
+                                    selectedDestinationWallet = null;
+                                  }
+                                });
+                                if (selectedKategori == "tambah_kategori") {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      backgroundColor: Colors.white,
+                                      title: Center(
                                         child: Text(
-                                          "Syudah",
+                                          "Nambahin Kategori",
                                           style: myTextStyle(
                                             color: PRIMARY_COLOR,
+                                            size: 18,
                                           ),
                                         ),
-                                      )
-                                    ],
+                                      ),
+                                      content: PrimaryTextField(
+                                        controller: kategoriController,
+                                        hintText: "Kategori apah",
+                                        onChanged: (data) {},
+                                      ),
+                                      actions: [
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                          ),
+                                          onPressed: () {
+                                            kategori.add({
+                                              "name":
+                                                  kategoriController.value.text,
+                                              "time": DateTime.now(),
+                                            });
+                                            dialogSetState(() {});
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            "Syudah",
+                                            style: myTextStyle(
+                                              color: PRIMARY_COLOR,
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                }
+                              },
+                              hint: Text(
+                                "Pilih Kategori",
+                                style: myTextStyle(),
+                              ),
+                            );
+                          },
+                        ),
+                      if (recordType == "Pengeluaran")
+                        const SizedBox(height: 12),
+                      if (recordType == "Pengeluaran" &&
+                          isTransferRecord(
+                            type: recordType,
+                            category: selectedKategori,
+                          ))
+                        StreamBuilder(
+                          stream: wallet.snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return Container();
+                            }
+
+                            if (selectedDestinationWallet == selectedWallet) {
+                              selectedDestinationWallet = null;
+                            }
+
+                            var destinationWalletItems = snapshot.data!.docs
+                                .where((doc) => doc.id != selectedWallet)
+                                .map<DropdownMenuItem<String>>((doc) {
+                              return DropdownMenuItem<String>(
+                                value: doc.id,
+                                child: Text(
+                                  doc['name'],
+                                  style: myTextStyle(),
+                                ),
+                              );
+                            }).toList();
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Wallet tujuan",
+                                  style: myTextStyle(),
+                                ),
+                                DropdownButton<String>(
+                                  dropdownColor: Colors.white,
+                                  iconEnabledColor: PRIMARY_COLOR,
+                                  style: myTextStyle(),
+                                  items: destinationWalletItems,
+                                  value: selectedDestinationWallet,
+                                  onChanged: (value) {
+                                    dialogSetState(() {
+                                      selectedDestinationWallet = value;
+                                    });
+                                  },
+                                  hint: Text(
+                                    "Pilih Wallet Tujuan",
+                                    style: myTextStyle(),
                                   ),
-                                );
-                              }
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                            );
+                          },
+                        ),
+                      StreamBuilder(
+                        stream: wallet.snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return Container();
+                          }
+
+                          if (selectedDestinationWallet == selectedWallet) {
+                            selectedDestinationWallet = null;
+                          }
+
+                          var walletItems = snapshot.data!.docs
+                              .map<DropdownMenuItem<String>>((doc) {
+                            return DropdownMenuItem<String>(
+                              value: doc.id,
+                              child: Text(
+                                doc['name'],
+                                style: myTextStyle(),
+                              ),
+                            );
+                          }).toList();
+                          return DropdownButton<String>(
+                            dropdownColor: Colors.white,
+                            iconEnabledColor: PRIMARY_COLOR,
+                            style: myTextStyle(),
+                            items: walletItems,
+                            value: selectedWallet,
+                            onChanged: (value) {
+                              dialogSetState(() {
+                                selectedWallet = value;
+                                if (selectedDestinationWallet == value) {
+                                  selectedDestinationWallet = null;
+                                }
+                              });
                             },
                             hint: Text(
-                              "Pilih Kategori",
+                              isTransferRecord(
+                                type: recordType,
+                                category: selectedKategori,
+                              )
+                                  ? "Pilih Wallet Asal"
+                                  : "Pilih Wallet",
                               style: myTextStyle(),
                             ),
                           );
                         },
                       ),
-                    if (recordType == "Pengeluaran") const SizedBox(height: 12),
-                    StreamBuilder(
-                      stream: wallet.snapshots(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return Container();
-                        }
-
-                        var walletItems = snapshot.data!.docs
-                            .map<DropdownMenuItem<String>>((doc) {
-                          return DropdownMenuItem<String>(
-                            value: doc.id,
-                            child: Text(
-                              doc['name'],
-                              style: myTextStyle(),
-                            ),
-                          );
-                        }).toList();
-                        return DropdownButton<String>(
-                          dropdownColor: Colors.white,
-                          iconEnabledColor: PRIMARY_COLOR,
-                          style: myTextStyle(),
-                          items: walletItems,
-                          value: selectedWallet,
-                          onChanged: (value) {
-                            dialogSetState(() {
-                              selectedWallet = value;
-                            });
-                          },
-                          hint: Text(
-                            "Pilih Wallet",
-                            style: myTextStyle(),
+                      const SizedBox(height: 12),
+                      GestureDetector(
+                        onTap: () async {
+                          await selectDateTime(
+                              context, dialogSetState, selectedDateTime);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 12,
                           ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () async {
-                        await selectDateTime(
-                            context, dialogSetState, selectedDateTime);
-                      },
-                      child: Container(
-                        padding:
-                            EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: PRIMARY_COLOR),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              formatDateWithTime(selectedDateTime),
-                              style: myTextStyle(),
-                            ),
-                            Icon(Icons.calendar_today, color: PRIMARY_COLOR),
-                          ],
+                          decoration: BoxDecoration(
+                            border: Border.all(color: PRIMARY_COLOR),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                formatDateWithTime(selectedDateTime),
+                                style: myTextStyle(),
+                              ),
+                              Icon(Icons.calendar_today, color: PRIMARY_COLOR),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              actions: [
-                StreamBuilder(
-                  stream: wallet.snapshots(),
-                  builder: (context, snapshot) {
-                    return ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                      ),
-                      onPressed: () {
-                        record.doc(data.id).delete().then(
-                          (_) {
-                            updateAmount(
-                              selectedWallet:
-                                  dataMap["wallet"].toString().toLowerCase(),
-                              selectedType:
-                                  dataMap["type"].toString().toLowerCase(),
-                              totalAmount: dataMap["total"],
-                              snapshot: snapshot,
-                              wallet: wallet,
-                              isDelete: true,
-                            );
-                          },
-                        );
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "Hapus",
-                        style: myTextStyle(color: PRIMARY_COLOR),
-                      ),
-                    );
-                  },
-                ),
-                StreamBuilder(
-                  stream: wallet.snapshots(),
-                  builder: (context, walletSnapshot) {
-                    return ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: PRIMARY_COLOR),
-                      onPressed: () async {
-                        if (!walletSnapshot.hasData) return;
+                actions: [
+                  StreamBuilder(
+                    stream: wallet.snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return Container();
+                      }
 
-                        int newTotalAmount =
-                            convertRupiahToInt(totalController.value.text);
-                        String oldWallet =
-                            dataMap["wallet"].toString().toLowerCase();
-                        String newWallet = selectedWallet!.toLowerCase();
-                        String type = recordType.toString().toLowerCase();
-                        int oldTotalAmount = dataMap["total"];
-
-                        // Calculate the difference in amount
-                        int amountDifference = newTotalAmount - oldTotalAmount;
-
-                        // If wallet changed, we need to undo old wallet and apply to new wallet
-                        bool walletChanged = oldWallet != newWallet;
-
-                        if (walletChanged) {
-                          // First, undo the old wallet's calculation
-                          updateAmount(
-                            selectedWallet: oldWallet,
-                            selectedType: type,
-                            totalAmount: oldTotalAmount,
-                            snapshot: walletSnapshot,
-                            wallet: wallet,
-                            isDelete: true,
-                          );
-
-                          // Wait a bit to ensure wallet update is processed
-                          await Future.delayed(Duration(milliseconds: 100));
-
-                          // Get fresh snapshot after wallet update
-                          var freshSnapshot = await wallet.get();
-                          var freshWalletSnapshot = AsyncSnapshot<
-                              QuerySnapshot<Map<String, dynamic>>>.withData(
-                            ConnectionState.done,
-                            freshSnapshot,
-                          );
-
-                          // Then, apply the new wallet's calculation
-                          if (newTotalAmount != 0) {
-                            updateAmount(
-                              selectedWallet: newWallet,
-                              selectedType: type,
-                              totalAmount: newTotalAmount,
-                              snapshot: freshWalletSnapshot,
-                              wallet: wallet,
-                            );
-                          }
-                        } else {
-                          // Same wallet - just apply the difference
-                          if (amountDifference != 0) {
-                            // Apply the difference amount
-                            if (amountDifference > 0) {
-                              // Increasing amount - add the difference
-                              updateAmount(
-                                selectedWallet: newWallet,
-                                selectedType: type,
-                                totalAmount: amountDifference.abs(),
-                                snapshot: walletSnapshot,
+                      return ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                        ),
+                        onPressed: () {
+                          record.doc(data.id).delete().then((_) {
+                            if (isTransfer && destinationWallet != null) {
+                              updateTransferAmount(
+                                sourceWallet:
+                                    dataMap["wallet"].toString().toLowerCase(),
+                                destinationWallet:
+                                    destinationWallet.toLowerCase(),
+                                totalAmount: dataMap["total"],
+                                snapshot: snapshot,
                                 wallet: wallet,
+                                isDelete: true,
                               );
                             } else {
-                              // Decreasing amount - subtract the difference
                               updateAmount(
-                                selectedWallet: newWallet,
-                                selectedType: type,
-                                totalAmount: amountDifference.abs(),
-                                snapshot: walletSnapshot,
+                                selectedWallet:
+                                    dataMap["wallet"].toString().toLowerCase(),
+                                selectedType:
+                                    dataMap["type"].toString().toLowerCase(),
+                                totalAmount: dataMap["total"],
+                                snapshot: snapshot,
                                 wallet: wallet,
                                 isDelete: true,
                               );
                             }
-                          }
-                        }
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          "Hapus",
+                          style: myTextStyle(color: PRIMARY_COLOR),
+                        ),
+                      );
+                    },
+                  ),
+                  StreamBuilder(
+                    stream: wallet.snapshots(),
+                    builder: (context, walletSnapshot) {
+                      final isSubmitEnabled = isFinancialRecordFormValid(
+                        selectedType: recordType.toLowerCase(),
+                        selectedKategori: selectedKategori,
+                        selectedWallet: selectedWallet,
+                        selectedDestinationWallet: selectedDestinationWallet,
+                        totalText: totalController.value.text,
+                      );
 
-                        // Update the record
-                        await record.doc(data.id).set({
-                          "title": titleController.value.text,
-                          "wallet": selectedWallet,
-                          "type": recordType,
-                          "total": newTotalAmount,
-                          "time": Timestamp.fromDate(selectedDateTime),
-                          if (recordType == "Pengeluaran" &&
-                              selectedKategori != null)
-                            "kategori": selectedKategori
-                        });
+                      return ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isSubmitEnabled
+                              ? PRIMARY_COLOR
+                              : Colors.grey.shade400,
+                        ),
+                        onPressed: isSubmitEnabled
+                            ? () async {
+                                if (!walletSnapshot.hasData) return;
 
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "Syudah",
-                        style: myTextStyle(color: Colors.white),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
+                                int newTotalAmount = convertRupiahToInt(
+                                    totalController.value.text);
+                                String oldWallet =
+                                    dataMap["wallet"].toString().toLowerCase();
+                                String newWallet =
+                                    selectedWallet!.toLowerCase();
+                                String type = recordType.toLowerCase();
+                                int oldTotalAmount = dataMap["total"];
+                                final oldDestinationWallet =
+                                    getTransferDestinationWallet(dataMap)
+                                        ?.toLowerCase();
+                                final newDestinationWallet =
+                                    selectedDestinationWallet?.toLowerCase();
+                                final wasTransfer = isTransferRecord(
+                                  type: recordType,
+                                  category: dataMap["kategori"]?.toString(),
+                                );
+                                final isNowTransfer = isTransferRecord(
+                                  type: recordType,
+                                  category: selectedKategori,
+                                );
+
+                                if (wasTransfer &&
+                                    oldDestinationWallet != null) {
+                                  updateTransferAmount(
+                                    sourceWallet: oldWallet,
+                                    destinationWallet: oldDestinationWallet,
+                                    totalAmount: oldTotalAmount,
+                                    snapshot: walletSnapshot,
+                                    wallet: wallet,
+                                    isDelete: true,
+                                  );
+                                } else {
+                                  updateAmount(
+                                    selectedWallet: oldWallet,
+                                    selectedType: type,
+                                    totalAmount: oldTotalAmount,
+                                    snapshot: walletSnapshot,
+                                    wallet: wallet,
+                                    isDelete: true,
+                                  );
+                                }
+
+                                await Future.delayed(
+                                  Duration(milliseconds: 100),
+                                );
+
+                                var freshSnapshot = await wallet.get();
+                                var freshWalletSnapshot = AsyncSnapshot<
+                                    QuerySnapshot<
+                                        Map<String, dynamic>>>.withData(
+                                  ConnectionState.done,
+                                  freshSnapshot,
+                                );
+
+                                if (newTotalAmount != 0) {
+                                  if (isNowTransfer &&
+                                      newDestinationWallet != null) {
+                                    updateTransferAmount(
+                                      sourceWallet: newWallet,
+                                      destinationWallet: newDestinationWallet,
+                                      totalAmount: newTotalAmount,
+                                      snapshot: freshWalletSnapshot,
+                                      wallet: wallet,
+                                    );
+                                  } else {
+                                    updateAmount(
+                                      selectedWallet: newWallet,
+                                      selectedType: type,
+                                      totalAmount: newTotalAmount,
+                                      snapshot: freshWalletSnapshot,
+                                      wallet: wallet,
+                                    );
+                                  }
+                                }
+
+                                await record.doc(data.id).set({
+                                  "title": titleController.value.text
+                                              .trim()
+                                              .isEmpty &&
+                                          isNowTransfer
+                                      ? "Transfer"
+                                      : titleController.value.text.trim(),
+                                  "wallet": selectedWallet,
+                                  "type": recordType,
+                                  "total": newTotalAmount,
+                                  "time": Timestamp.fromDate(selectedDateTime),
+                                  if (recordType == "Pengeluaran" &&
+                                      selectedKategori != null)
+                                    "kategori": selectedKategori,
+                                  if (isNowTransfer &&
+                                      selectedDestinationWallet != null)
+                                    "walletTujuan": selectedDestinationWallet,
+                                });
+
+                                Navigator.pop(context);
+                              }
+                            : null,
+                        child: Text(
+                          "Syudah",
+                          style: myTextStyle(
+                            color:
+                                isSubmitEnabled ? Colors.white : Colors.white70,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
           ),
         );
       },
@@ -616,7 +789,6 @@ class FinancialTile1 extends StatelessWidget {
         ),
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: IntrinsicHeight(
-          // Wrap with IntrinsicHeight to adapt to content height
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -644,14 +816,16 @@ class FinancialTile1 extends StatelessWidget {
                           Text(
                             title,
                             style: myTextStyle(size: 18),
-                            maxLines: 2, // Allow text to wrap to new lines
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           if (dataMap["type"] == "Pengeluaran")
                             Text(
-                              dataMap["kategori"] ?? "",
+                              isTransfer && destinationWallet != null
+                                  ? "${dataMap["kategori"]} • ${dataMap["wallet"]} -> $destinationWallet"
+                                  : dataMap["kategori"] ?? "",
                               style: myTextStyle(),
-                              maxLines: 2, // Allow text to wrap to new lines
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                         ],
@@ -672,7 +846,9 @@ class FinancialTile1 extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    dataMap["wallet"] ?? "",
+                    isTransfer && destinationWallet != null
+                        ? "${dataMap["wallet"]} -> $destinationWallet"
+                        : dataMap["wallet"] ?? "",
                     style: myTextStyle(fontWeight: FontWeight.normal),
                   ),
                 ],
@@ -739,6 +915,9 @@ String formatToRupiah(int amount) {
 
 int convertRupiahToInt(String formattedAmount) {
   String numericString = formattedAmount.replaceAll(RegExp(r'[^0-9]'), '');
+  if (numericString.isEmpty) {
+    return 0;
+  }
   return int.parse(numericString);
 }
 
@@ -796,6 +975,33 @@ void updateAmount({
       wallet.doc(walletDoc.id).update({"amount": updatedAmount});
     }
   }
+}
+
+void updateTransferAmount({
+  required String sourceWallet,
+  required String destinationWallet,
+  required int totalAmount,
+  required AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot,
+  required CollectionReference<Map<String, dynamic>> wallet,
+  bool? isDelete,
+}) {
+  updateAmount(
+    selectedWallet: sourceWallet,
+    selectedType: "pengeluaran",
+    totalAmount: totalAmount,
+    snapshot: snapshot,
+    wallet: wallet,
+    isDelete: isDelete,
+  );
+
+  updateAmount(
+    selectedWallet: destinationWallet,
+    selectedType: "pemasukan",
+    totalAmount: totalAmount,
+    snapshot: snapshot,
+    wallet: wallet,
+    isDelete: isDelete,
+  );
 }
 
 void resetWallet(
