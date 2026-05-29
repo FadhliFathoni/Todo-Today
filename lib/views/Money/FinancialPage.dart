@@ -352,59 +352,6 @@ class _FinancialpageState extends State<Financialpage> {
                           },
                         ),
                       ),
-                      Visibility(
-                        visible: isTransferRecord(
-                          type: selectedType,
-                          category: selectedKategori,
-                        ),
-                        child: StreamBuilder(
-                          stream: wallet.snapshots(),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return Container();
-                            }
-
-                            var destinationWalletItems = snapshot.data!.docs
-                                .where((doc) => doc.id != selectedWallet)
-                                .map<DropdownMenuItem<String>>((doc) {
-                              return DropdownMenuItem<String>(
-                                value: doc.id,
-                                child: Text(
-                                  doc['name'],
-                                  style: myTextStyle(),
-                                ),
-                              );
-                            }).toList();
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 8),
-                                Text(
-                                  "Wallet tujuan",
-                                  style: myTextStyle(),
-                                ),
-                                DropdownButton<String>(
-                                  dropdownColor: Colors.white,
-                                  iconEnabledColor: PRIMARY_COLOR,
-                                  style: myTextStyle(),
-                                  items: destinationWalletItems,
-                                  value: selectedDestinationWallet,
-                                  onChanged: (value) {
-                                    dialogSetState(() {
-                                      selectedDestinationWallet = value;
-                                    });
-                                  },
-                                  hint: Text(
-                                    "Pilih Wallet Tujuan",
-                                    style: myTextStyle(),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
                       StreamBuilder(
                         stream: wallet.snapshots(),
                         builder: (context, snapshot) {
@@ -451,6 +398,55 @@ class _FinancialpageState extends State<Financialpage> {
                             ),
                           );
                         },
+                      ),
+                      Visibility(
+                        visible: isTransferRecord(
+                          type: selectedType,
+                          category: selectedKategori,
+                        ),
+                        child: StreamBuilder(
+                          stream: wallet.snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return Container();
+                            }
+
+                            var destinationWalletItems = snapshot.data!.docs
+                                .where((doc) => doc.id != selectedWallet)
+                                .map<DropdownMenuItem<String>>((doc) {
+                              return DropdownMenuItem<String>(
+                                value: doc.id,
+                                child: Text(
+                                  doc['name'],
+                                  style: myTextStyle(),
+                                ),
+                              );
+                            }).toList();
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 8),
+                                DropdownButton<String>(
+                                  dropdownColor: Colors.white,
+                                  iconEnabledColor: PRIMARY_COLOR,
+                                  style: myTextStyle(),
+                                  items: destinationWalletItems,
+                                  value: selectedDestinationWallet,
+                                  onChanged: (value) {
+                                    dialogSetState(() {
+                                      selectedDestinationWallet = value;
+                                    });
+                                  },
+                                  hint: Text(
+                                    "Pilih Wallet Tujuan",
+                                    style: myTextStyle(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                       Material(
                         color: Colors.transparent,
