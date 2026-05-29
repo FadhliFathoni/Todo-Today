@@ -672,7 +672,7 @@ class FinancialTile1 extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    dataMap["wallet"],
+                    dataMap["wallet"] ?? "",
                     style: myTextStyle(fontWeight: FontWeight.normal),
                   ),
                 ],
