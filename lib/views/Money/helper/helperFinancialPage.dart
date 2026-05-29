@@ -58,6 +58,47 @@ String? getTransferDestinationWallet(Map<String, dynamic> dataMap) {
   return destination;
 }
 
+String? getTransferPairId(Map<String, dynamic> dataMap) {
+  final pairId = dataMap["transferPairId"]?.toString().trim();
+  if (pairId == null || pairId.isEmpty) {
+    return null;
+  }
+  return pairId;
+}
+
+bool isLinkedTransferRecord(Map<String, dynamic> dataMap) {
+  return getTransferPairId(dataMap) != null;
+}
+
+Future<Map<String, QueryDocumentSnapshot<Map<String, dynamic>>?>>
+    getTransferPairDocs({
+  required CollectionReference<Map<String, dynamic>> record,
+  required String pairId,
+}) async {
+  final pairSnapshot =
+      await record.where("transferPairId", isEqualTo: pairId).get();
+
+  QueryDocumentSnapshot<Map<String, dynamic>>? expenseDoc;
+  QueryDocumentSnapshot<Map<String, dynamic>>? incomeDoc;
+
+  for (final doc in pairSnapshot.docs) {
+    final data = doc.data();
+    final role = data["transferRole"]?.toString().toLowerCase();
+    final type = data["type"]?.toString().toLowerCase();
+
+    if (role == "expense" || type == "pengeluaran") {
+      expenseDoc = doc;
+    } else if (role == "income" || type == "pemasukan") {
+      incomeDoc = doc;
+    }
+  }
+
+  return {
+    "expense": expenseDoc,
+    "income": incomeDoc,
+  };
+}
+
 bool isFinancialRecordFormValid({
   required String selectedType,
   required String? selectedKategori,
@@ -100,19 +141,12 @@ class FinancialTile extends StatelessWidget {
     final dataMap = data.data() as Map<String, dynamic>?;
     if (dataMap == null) return Container();
     final isIncome = dataMap["type"] == "Pemasukan";
-    final isTransfer = isTransferRecord(
-      type: dataMap["type"]?.toString(),
-      category: dataMap["kategori"]?.toString(),
-    );
-    final destinationWallet = getTransferDestinationWallet(dataMap);
     final title = dataMap["title"] ?? dataMap["type"];
     final totalAmount = formatToRupiah(
       dataMap["total"] * (isIncome ? 1 : -1),
     );
     final category = dataMap.containsKey("kategori")
-        ? isTransfer && destinationWallet != null
-            ? "${dataMap["kategori"]} • ${dataMap["wallet"]} -> $destinationWallet"
-            : dataMap["kategori"]
+        ? dataMap["kategori"]
         : dataMap["wallet"];
     final date = convertTimestampToIndonesianDate(dataMap["time"])!;
 
@@ -196,30 +230,58 @@ class FinancialTile1 extends StatelessWidget {
       category: dataMap["kategori"]?.toString(),
     );
     final destinationWallet = getTransferDestinationWallet(dataMap);
+    final transferPairId = getTransferPairId(dataMap);
     final title = dataMap["title"] ?? dataMap["type"];
     final totalAmount = formatToRupiah(
       dataMap["total"] * (isIncome ? 1 : -1),
     );
 
     return GestureDetector(
-      onLongPress: () {
+      onLongPress: () async {
         var userDoc = record.parent?.parent;
         var userId = userDoc?.id ?? "";
         var instance = FirebaseFirestore.instance;
         var collection = instance.collection("finance").doc(userId);
         var kategori = collection.collection("kategori");
+        QueryDocumentSnapshot<Map<String, dynamic>>? transferExpenseDoc;
+        QueryDocumentSnapshot<Map<String, dynamic>>? transferIncomeDoc;
 
-        var titleController = TextEditingController(text: dataMap["title"]);
+        if (transferPairId != null) {
+          final pairDocs = await getTransferPairDocs(
+            record: record,
+            pairId: transferPairId,
+          );
+          transferExpenseDoc = pairDocs["expense"];
+          transferIncomeDoc = pairDocs["income"];
+        }
+
+        final isLinkedTransferPair =
+            transferExpenseDoc != null && transferIncomeDoc != null;
+        final primaryDataMap =
+            isLinkedTransferPair ? transferExpenseDoc.data() : dataMap;
+        final linkedIncomeDataMap =
+            isLinkedTransferPair ? transferIncomeDoc.data() : null;
+
+        var titleController = TextEditingController(
+          text: primaryDataMap["title"]?.toString() ?? "",
+        );
         var totalController = TextEditingController(
-          text: formatToRupiah(dataMap["total"]),
+          text: formatToRupiah(primaryDataMap["total"]),
         );
         var kategoriController = TextEditingController();
 
-        DateTime selectedDateTime = (dataMap["time"] as Timestamp).toDate();
-        String? selectedKategori = dataMap["kategori"];
-        String? selectedWallet = dataMap["wallet"];
-        String? selectedDestinationWallet = destinationWallet;
-        String recordType = dataMap["type"];
+        DateTime selectedDateTime =
+            (primaryDataMap["time"] as Timestamp).toDate();
+        String? selectedKategori =
+            isLinkedTransferPair ? "Transfer" : dataMap["kategori"];
+        String? selectedWallet = primaryDataMap["wallet"];
+        String? selectedDestinationWallet = isLinkedTransferPair
+            ? linkedIncomeDataMap == null
+                ? null
+                : linkedIncomeDataMap["wallet"]?.toString()
+            : destinationWallet;
+        String recordType =
+            isLinkedTransferPair ? "Pengeluaran" : dataMap["type"];
 
         Future<void> selectDateTime(BuildContext context,
             StateSetter dialogSetState, DateTime dateInput) async {
@@ -612,8 +674,26 @@ class FinancialTile1 extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                         ),
-                        onPressed: () {
-                          record.doc(data.id).delete().then((_) {
+                        onPressed: () async {
+                          if (isLinkedTransferPair) {
+                            final batch = FirebaseFirestore.instance.batch();
+                            batch.delete(transferExpenseDoc!.reference);
+                            batch.delete(transferIncomeDoc!.reference);
+                            await batch.commit();
+                            updateTransferAmount(
+                              sourceWallet: transferExpenseDoc["wallet"]
+                                  .toString()
+                                  .toLowerCase(),
+                              destinationWallet: transferIncomeDoc["wallet"]
+                                  .toString()
+                                  .toLowerCase(),
+                              totalAmount: transferExpenseDoc["total"],
+                              snapshot: snapshot,
+                              wallet: wallet,
+                              isDelete: true,
+                            );
+                          } else {
+                            await record.doc(data.id).delete();
                             if (isTransfer && destinationWallet != null) {
                               updateTransferAmount(
                                 sourceWallet:
@@ -637,7 +717,7 @@ class FinancialTile1 extends StatelessWidget {
                                 isDelete: true,
                               );
                             }
-                          });
+                          }
                           Navigator.pop(context);
                         },
                         child: Text(
@@ -651,7 +731,9 @@ class FinancialTile1 extends StatelessWidget {
                     stream: wallet.snapshots(),
                     builder: (context, walletSnapshot) {
                       final isSubmitEnabled = isFinancialRecordFormValid(
-                        selectedType: recordType.toLowerCase(),
+                        selectedType: isLinkedTransferPair
+                            ? "pengeluaran"
+                            : recordType.toLowerCase(),
                         selectedKategori: selectedKategori,
                         selectedWallet: selectedWallet,
                         selectedDestinationWallet: selectedDestinationWallet,
@@ -670,12 +752,9 @@ class FinancialTile1 extends StatelessWidget {
 
                                 int newTotalAmount = convertRupiahToInt(
                                     totalController.value.text);
-                                String oldWallet =
-                                    dataMap["wallet"].toString().toLowerCase();
                                 String newWallet =
                                     selectedWallet!.toLowerCase();
                                 String type = recordType.toLowerCase();
-                                int oldTotalAmount = dataMap["total"];
                                 final oldDestinationWallet =
                                     getTransferDestinationWallet(dataMap)
                                         ?.toLowerCase();
@@ -690,21 +769,39 @@ class FinancialTile1 extends StatelessWidget {
                                   category: selectedKategori,
                                 );
 
-                                if (wasTransfer &&
+                                if (isLinkedTransferPair) {
+                                  updateTransferAmount(
+                                    sourceWallet: transferExpenseDoc!["wallet"]
+                                        .toString()
+                                        .toLowerCase(),
+                                    destinationWallet:
+                                        transferIncomeDoc!["wallet"]
+                                            .toString()
+                                            .toLowerCase(),
+                                    totalAmount: transferExpenseDoc["total"],
+                                    snapshot: walletSnapshot,
+                                    wallet: wallet,
+                                    isDelete: true,
+                                  );
+                                } else if (wasTransfer &&
                                     oldDestinationWallet != null) {
                                   updateTransferAmount(
-                                    sourceWallet: oldWallet,
+                                    sourceWallet: dataMap["wallet"]
+                                        .toString()
+                                        .toLowerCase(),
                                     destinationWallet: oldDestinationWallet,
-                                    totalAmount: oldTotalAmount,
+                                    totalAmount: dataMap["total"],
                                     snapshot: walletSnapshot,
                                     wallet: wallet,
                                     isDelete: true,
                                   );
                                 } else {
                                   updateAmount(
-                                    selectedWallet: oldWallet,
+                                    selectedWallet: dataMap["wallet"]
+                                        .toString()
+                                        .toLowerCase(),
                                     selectedType: type,
-                                    totalAmount: oldTotalAmount,
+                                    totalAmount: dataMap["total"],
                                     snapshot: walletSnapshot,
                                     wallet: wallet,
                                     isDelete: true,
@@ -744,24 +841,55 @@ class FinancialTile1 extends StatelessWidget {
                                   }
                                 }
 
-                                await record.doc(data.id).set({
-                                  "title": titleController.value.text
-                                              .trim()
-                                              .isEmpty &&
-                                          isNowTransfer
-                                      ? "Transfer"
-                                      : titleController.value.text.trim(),
-                                  "wallet": selectedWallet,
-                                  "type": recordType,
-                                  "total": newTotalAmount,
-                                  "time": Timestamp.fromDate(selectedDateTime),
-                                  if (recordType == "Pengeluaran" &&
-                                      selectedKategori != null)
-                                    "kategori": selectedKategori,
-                                  if (isNowTransfer &&
-                                      selectedDestinationWallet != null)
-                                    "walletTujuan": selectedDestinationWallet,
-                                });
+                                final trimmedTitle =
+                                    titleController.value.text.trim();
+
+                                if (isLinkedTransferPair &&
+                                    selectedDestinationWallet != null) {
+                                  final batch =
+                                      FirebaseFirestore.instance.batch();
+                                  batch.set(transferExpenseDoc!.reference, {
+                                    "title": trimmedTitle.isEmpty
+                                        ? "Transfer"
+                                        : trimmedTitle,
+                                    "wallet": selectedWallet,
+                                    "type": "Pengeluaran",
+                                    "total": newTotalAmount,
+                                    "time":
+                                        Timestamp.fromDate(selectedDateTime),
+                                    "kategori": "Transfer",
+                                    "transferPairId": transferPairId,
+                                    "transferRole": "expense",
+                                  });
+                                  batch.set(transferIncomeDoc!.reference, {
+                                    "title": trimmedTitle.isEmpty
+                                        ? "Transfer"
+                                        : trimmedTitle,
+                                    "wallet": selectedDestinationWallet,
+                                    "type": "Pemasukan",
+                                    "total": newTotalAmount,
+                                    "time":
+                                        Timestamp.fromDate(selectedDateTime),
+                                    "transferPairId": transferPairId,
+                                    "transferRole": "income",
+                                  });
+                                  await batch.commit();
+                                } else {
+                                  await record.doc(data.id).set({
+                                    "title":
+                                        trimmedTitle.isEmpty && isNowTransfer
+                                            ? "Transfer"
+                                            : trimmedTitle,
+                                    "wallet": selectedWallet,
+                                    "type": recordType,
+                                    "total": newTotalAmount,
+                                    "time":
+                                        Timestamp.fromDate(selectedDateTime),
+                                    if (recordType == "Pengeluaran" &&
+                                        selectedKategori != null)
+                                      "kategori": selectedKategori,
+                                  });
+                                }
 
                                 Navigator.pop(context);
                               }
@@ -821,9 +949,7 @@ class FinancialTile1 extends StatelessWidget {
                           ),
                           if (dataMap["type"] == "Pengeluaran")
                             Text(
-                              isTransfer && destinationWallet != null
-                                  ? "${dataMap["kategori"]} • ${dataMap["wallet"]} -> $destinationWallet"
-                                  : dataMap["kategori"] ?? "",
+                              dataMap["kategori"] ?? "",
                               style: myTextStyle(),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -846,9 +972,7 @@ class FinancialTile1 extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    isTransfer && destinationWallet != null
-                        ? "${dataMap["wallet"]} -> $destinationWallet"
-                        : dataMap["wallet"] ?? "",
+                    dataMap["wallet"] ?? "",
                     style: myTextStyle(fontWeight: FontWeight.normal),
                   ),
                 ],

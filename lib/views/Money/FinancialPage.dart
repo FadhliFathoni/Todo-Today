@@ -499,7 +499,7 @@ class _FinancialpageState extends State<Financialpage> {
                                       : Colors.grey.shade600,
                                 ),
                                 onPressed: isSubmitEnabled
-                                    ? () {
+                                    ? () async {
                                         int totalAmount = 0;
                                         final isTransfer = isTransferRecord(
                                           type: selectedType,
@@ -512,30 +512,61 @@ class _FinancialpageState extends State<Financialpage> {
                                             selectedWallet != null) {
                                           totalAmount = convertRupiahToInt(
                                               totalController.value.text);
-                                          record.add({
-                                            "title": trimmedTitle.isEmpty &&
-                                                    isTransfer
-                                                ? "Transfer"
-                                                : trimmedTitle,
-                                            "kategori": selectedKategori,
-                                            "time": selectedDateTime,
-                                            "total": totalAmount,
-                                            "type": "Pengeluaran",
-                                            "wallet": selectedWallet,
-                                            if (isTransfer)
-                                              "walletTujuan":
+                                          if (isTransfer &&
+                                              selectedDestinationWallet !=
+                                                  null) {
+                                            final transferPairId =
+                                                record.doc().id;
+                                            final expenseDoc = record.doc();
+                                            final incomeDoc = record.doc();
+                                            final transferTitle =
+                                                trimmedTitle.isEmpty
+                                                    ? "Transfer"
+                                                    : trimmedTitle;
+
+                                            final batch = FirebaseFirestore
+                                                .instance
+                                                .batch();
+                                            batch.set(expenseDoc, {
+                                              "title": transferTitle,
+                                              "kategori": selectedKategori,
+                                              "time": selectedDateTime,
+                                              "total": totalAmount,
+                                              "type": "Pengeluaran",
+                                              "wallet": selectedWallet,
+                                              "transferPairId": transferPairId,
+                                              "transferRole": "expense",
+                                            });
+                                            batch.set(incomeDoc, {
+                                              "title": transferTitle,
+                                              "time": selectedDateTime,
+                                              "total": totalAmount,
+                                              "type": "Pemasukan",
+                                              "wallet":
                                                   selectedDestinationWallet,
-                                            // "link": (selectedKategori ==
-                                            //         "Belanja Online")
-                                            //     ? linkController.value.text
-                                            //     : "",
-                                          });
+                                              "transferPairId": transferPairId,
+                                              "transferRole": "income",
+                                            });
+                                            await batch.commit();
+                                          } else {
+                                            await record.add({
+                                              "title": trimmedTitle.isEmpty &&
+                                                      isTransfer
+                                                  ? "Transfer"
+                                                  : trimmedTitle,
+                                              "kategori": selectedKategori,
+                                              "time": selectedDateTime,
+                                              "total": totalAmount,
+                                              "type": "Pengeluaran",
+                                              "wallet": selectedWallet,
+                                            });
+                                          }
                                         } else if (selectedType ==
                                                 "pemasukan" &&
                                             selectedWallet != null) {
                                           totalAmount = convertRupiahToInt(
                                               totalController.value.text);
-                                          record.add({
+                                          await record.add({
                                             "title": trimmedTitle,
                                             "time": selectedDateTime,
                                             "total": totalAmount,
