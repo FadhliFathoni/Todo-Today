@@ -22,6 +22,7 @@ class _FinancialpageState extends State<Financialpage> {
   String tabunganDocId = "Tabungan";
   String danaDaruratDocId = "Dana Darurat";
   String kebutuhanDocId = "Kebutuhan";
+  int _limit = 20;
   @override
   void initState() {
     super.initState();
@@ -806,7 +807,7 @@ class _FinancialpageState extends State<Financialpage> {
                     );
                   }),
               StreamBuilder(
-                  stream: record.orderBy("time", descending: true).snapshots(),
+                  stream: record.orderBy("time", descending: true).limit(_limit).snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(child: Container());
@@ -882,95 +883,111 @@ class _FinancialpageState extends State<Financialpage> {
                       });
                     }
 
-                    return ListView.separated(
-                      separatorBuilder: (context, index) =>
-                          SizedBox(height: 12),
-                      physics: NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      itemCount: dailyTotals.length,
-                      itemBuilder: (context, index) {
-                        var dailyTotal = dailyTotals[index];
-                        String monthYear = dailyTotal['monthYear'];
+                    return Column(
+                      children: [
+                        ListView.separated(
+                          separatorBuilder: (context, index) =>
+                              SizedBox(height: 12),
+                          physics: NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          itemCount: dailyTotals.length,
+                          itemBuilder: (context, index) {
+                            var dailyTotal = dailyTotals[index];
+                            String monthYear = dailyTotal['monthYear'];
 
-                        return Column(
-                          children: [
-                            if (index == 0 ||
-                                dailyTotals[index - 1]['monthYear'] !=
-                                    monthYear)
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: EdgeInsets.all(12),
-                                margin: EdgeInsets.only(bottom: 12),
-                                child: Text(
-                                  monthYear,
-                                  style: myTextStyle(
-                                    size: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: PRIMARY_COLOR,
-                                  ),
-                                ),
-                              ),
-                            Container(
-                              margin: EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12)),
-                              child: Column(
-                                children: [
+                            return Column(
+                              children: [
+                                if (index == 0 ||
+                                    dailyTotals[index - 1]['monthYear'] !=
+                                        monthYear)
                                   Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            dailyTotal["date"],
-                                            style: myTextStyle(size: 16),
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                formatToRupiah(dailyTotal[
-                                                    'totalPemasukan']),
-                                                style: myTextStyle(
-                                                    size: 16,
-                                                    color: Colors.green),
-                                              ),
-                                              SizedBox(width: 12),
-                                              Text(
-                                                formatToRupiah(dailyTotal[
-                                                    'totalPengeluaran']),
-                                                style: myTextStyle(
-                                                    size: 16,
-                                                    color: Colors.red),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: EdgeInsets.all(12),
+                                    margin: EdgeInsets.only(bottom: 12),
+                                    child: Text(
+                                      monthYear,
+                                      style: myTextStyle(
+                                        size: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: PRIMARY_COLOR,
                                       ),
                                     ),
                                   ),
-                                  Column(
-                                    children: groupedData[dailyTotal['date']]!
-                                        .map((doc) => FinancialTile1(
-                                            data: doc,
-                                            record: record,
-                                            wallet: wallet))
-                                        .toList(),
+                                Container(
+                                  margin: EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12)),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: MediaQuery.of(context).size.width,
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 6),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                dailyTotal["date"],
+                                                style: myTextStyle(size: 16),
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    formatToRupiah(dailyTotal[
+                                                        'totalPemasukan']),
+                                                    style: myTextStyle(
+                                                        size: 16,
+                                                        color: Colors.green),
+                                                  ),
+                                                  SizedBox(width: 12),
+                                                  Text(
+                                                    formatToRupiah(dailyTotal[
+                                                        'totalPengeluaran']),
+                                                    style: myTextStyle(
+                                                        size: 16,
+                                                        color: Colors.red),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Column(
+                                        children: groupedData[dailyTotal['date']]!
+                                            .map((doc) => FinancialTile1(
+                                                data: doc,
+                                                record: record,
+                                                wallet: wallet))
+                                            .toList(),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        if (docs.length >= _limit)
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _limit += 20;
+                              });
+                            },
+                            child: Text(
+                              "Muat Lebih Banyak",
+                              style: myTextStyle(color: PRIMARY_COLOR),
                             ),
-                          ],
-                        );
-                      },
+                          ),
+                      ],
                     );
                   })
             ],
