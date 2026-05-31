@@ -23,6 +23,7 @@ class _FinancialpageState extends State<Financialpage> {
   String danaDaruratDocId = "Dana Darurat";
   String kebutuhanDocId = "Kebutuhan";
   int _limit = 20;
+  List<dynamic> _cachedDocs = [];
   @override
   void initState() {
     super.initState();
@@ -624,8 +625,17 @@ class _FinancialpageState extends State<Financialpage> {
         ),
       ),
       body: Container(
-        child: SingleChildScrollView(
-          child: Column(
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification scrollInfo) {
+            if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+              setState(() {
+                _limit += 20;
+              });
+            }
+            return false;
+          },
+          child: SingleChildScrollView(
+            child: Column(
             children: [
               StreamBuilder(
                 stream: wallet.snapshots(),
@@ -805,17 +815,26 @@ class _FinancialpageState extends State<Financialpage> {
               StreamBuilder(
                   stream: record.orderBy("time", descending: true).limit(_limit).snapshots(),
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: Container());
+                    if (snapshot.hasData) {
+                      _cachedDocs = snapshot.data!.docs;
                     }
-                    if (snapshot.hasError) {
-                      return Center(
-                          child: Text(
-                        "Error: ${snapshot.error}",
-                        style: myTextStyle(),
-                      ));
+
+                    if (!snapshot.hasData && _cachedDocs.isEmpty) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: Container());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(
+                            child: Text(
+                          "Error: ${snapshot.error}",
+                          style: myTextStyle(),
+                        ));
+                      }
                     }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+
+                    var docs = snapshot.hasData ? snapshot.data!.docs : _cachedDocs;
+
+                    if (docs.isEmpty) {
                       return Container(
                         margin: EdgeInsets.all(50),
                         child: Column(
@@ -836,7 +855,6 @@ class _FinancialpageState extends State<Financialpage> {
                         ),
                       );
                     }
-                    var docs = snapshot.data!.docs;
                     Map<String, List<DocumentSnapshot>> groupedData = {};
 
                     for (var doc in docs) {
@@ -972,15 +990,10 @@ class _FinancialpageState extends State<Financialpage> {
                           },
                         ),
                         if (docs.length >= _limit)
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _limit += 20;
-                              });
-                            },
-                            child: Text(
-                              "Muat Lebih Banyak",
-                              style: myTextStyle(color: PRIMARY_COLOR),
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Center(
+                              child: CircularProgressIndicator(color: PRIMARY_COLOR),
                             ),
                           ),
                       ],
@@ -988,6 +1001,7 @@ class _FinancialpageState extends State<Financialpage> {
                   })
             ],
           ),
+        ),
         ),
       ),
     );
