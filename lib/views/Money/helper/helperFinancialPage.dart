@@ -560,10 +560,6 @@ class FinancialTile1 extends StatelessWidget {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "Wallet tujuan",
-                                  style: myTextStyle(),
-                                ),
                                 DropdownButton<String>(
                                   dropdownColor: Colors.white,
                                   iconEnabledColor: PRIMARY_COLOR,
